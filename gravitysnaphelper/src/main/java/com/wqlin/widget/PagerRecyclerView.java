@@ -50,6 +50,11 @@ public class PagerRecyclerView extends RecyclerView {
     private boolean isLog = false;
     private int mCurrentPosition = -1;
     /**
+     * 是否需要设置成ViewPager效果  不是则为正常RecyclerView <P>
+     * false时会清除所有滑动监听
+     */
+    private boolean isPager=true;
+    /**
      * 快速滑动是否翻动多页
      */
     private boolean isFlingMorePage = false;
@@ -70,6 +75,9 @@ public class PagerRecyclerView extends RecyclerView {
     }
 
     private void init() {
+        if (!isPager)
+            return;
+
         setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         setSnapHelper(isFlingMorePage);
         mPagerOnScrollListener = new PagerOnScrollListener();
@@ -91,33 +99,33 @@ public class PagerRecyclerView extends RecyclerView {
             }
         });
     }
-    /**
-     * 快速滑动是否翻动多页
-     */
-    public boolean isFlingMorePage() {
-        return isFlingMorePage;
-    }
-    /**
-     * 快速滑动是否翻动多页
-     */
-    public void setFlingMorePage(boolean flingMorePage) {
-        if (flingMorePage != isFlingMorePage) {
-            setSnapHelper(flingMorePage);
-        }
-        isFlingMorePage = flingMorePage;
+
+    @Override
+    public void setLayoutManager(LayoutManager layout) {
+        super.setLayoutManager(layout);
     }
 
     private void setSnapHelper(boolean flingMorePage) {
+        if (!isPager)
+            return;
         if (flingMorePage) {
             new GravitySnapHelper(Gravity.START).attachToRecyclerView(this);
         } else {
             new GravityPagerSnapHelper(Gravity.START).attachToRecyclerView(this);
         }
     }
+    private void destroyCallbacks() {
+        this.clearOnScrollListeners();
+        this.setOnFlingListener(null);
+    }
     public void setCurrentItem(int item) {
+        if (!isPager)
+            return;
         setCurrentItem(item, false);
     }
     public void setCurrentItem(int item, boolean smoothScroll) {
+        if (!isPager)
+            return;
         if (item != mCurrentPosition) {
             LayoutManager layoutManager = getLayoutManager();
             if (layoutManager instanceof LinearLayoutManager) {
@@ -156,12 +164,48 @@ public class PagerRecyclerView extends RecyclerView {
         }
     }
 
-    private boolean isFling = false;
-    @Override
-    public boolean fling(int velocityX, int velocityY) {
-        isFling = true;
-        return super.fling(velocityX, velocityY);
+    /**
+     * 快速滑动是否翻动多页
+     */
+    public boolean isFlingMorePage() {
+        return isFlingMorePage;
     }
+    /**
+     * 快速滑动是否翻动多页
+     */
+    public void setFlingMorePage(boolean flingMorePage) {
+        if (!isPager)
+            return;
+        if (flingMorePage != isFlingMorePage) {
+            setSnapHelper(flingMorePage);
+        }
+        isFlingMorePage = flingMorePage;
+    }
+
+    /**
+     * 是否需要设置成ViewPager效果  不是则为正常RecyclerView
+     * @return
+     */
+    public boolean isPager() {
+        return isPager;
+    }
+    /**
+     * 是否需要设置成ViewPager效果  不是则为正常RecyclerView
+     * @return false时会清除所有滑动监听
+     */
+    public void setPager(boolean pager) {
+        if (isPager != pager) {
+            isPager = pager;
+            if (!pager) {
+                destroyCallbacks();
+            } else {
+                init();
+            }
+            return;
+        }
+        isPager = pager;
+    }
+
     private void log(String str) {
         if (isLog) {
             Log.e(TAG, str);
@@ -170,6 +214,8 @@ public class PagerRecyclerView extends RecyclerView {
     class PagerOnScrollListener extends OnScrollListener {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            if (!isPager)
+                return;
             LayoutManager layoutManager = recyclerView.getLayoutManager();
             if (layoutManager instanceof LinearLayoutManager) {
                 LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
@@ -223,6 +269,8 @@ public class PagerRecyclerView extends RecyclerView {
             SCROLL_STATE_IDLE：目前RecyclerView不是滚动，也就是静止
             SCROLL_STATE_DRAGGING：RecyclerView目前被外部输入如用户触摸输入。
             SCROLL_STATE_SETTLING：RecyclerView目前动画虽然不是在最后一个位置外部控制。*/
+            if (!isPager)
+                return;
             int size=mOnPageChangeListeners.size();
             if (size>0) {
                 for (int i = 0; i <size; i++) {
@@ -256,13 +304,12 @@ public class PagerRecyclerView extends RecyclerView {
 
         private int pagePosition = -1;
         private int childIndex = -1;
-        public BaseViewHolder(final View view,int pagePosition,int childIndex) {
+        public BaseViewHolder(final View view,int childIndex) {
             this.views = new SparseArray<>();
             this.childClickViewIds = new LinkedHashSet<>();
             this.itemChildLongClickViewIds = new LinkedHashSet<>();
             this.nestViews = new HashSet<>();
             convertView = view;
-            this.pagePosition = pagePosition;
             this.childIndex = childIndex;
         }
         /**
@@ -748,6 +795,10 @@ public class PagerRecyclerView extends RecyclerView {
                 ((Checkable) view).setChecked(checked);
             }
             return this;
+        }
+
+        public void setPagePosition(int pagePosition) {
+            this.pagePosition = pagePosition;
         }
 
         public  int getPosition(){

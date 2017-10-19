@@ -6,6 +6,9 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+
+import com.github.rubensousa.gravitysnaphelper.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,11 +29,119 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
         this.childNum = childNum;
         datas = new ArrayList<>();
     }
-    public abstract View getParentView(Context context);
 
-    public abstract PagerRecyclerView.BaseViewHolder getChildView(ViewHolder parentViewHolder,int pagePosition,int childIndex);
+    private ViewHolder onCreateParentViewHolder(Context context, ViewGroup recyclerView) {
+        View pView = getParentView(context, recyclerView);
+        List<PagerRecyclerView.BaseViewHolder> childViewHolders = new ArrayList<>();
+        ViewGroup.LayoutParams parentParams = getParentViewParams(recyclerView, pView);
+        if (parentParams != null) {
+            pView.setLayoutParams(parentParams);
+        }
+        ViewGroup parentView = null;
+        if (pView instanceof ViewGroup) {
+            parentView = (ViewGroup) pView;
+        }
+
+        for (int i = 0; i < childNum; i++) {
+            PagerRecyclerView.BaseViewHolder baseViewHolder = onCreateChildViewHolder(context,  recyclerView,pView, i);
+            childViewHolders.add(baseViewHolder);
+            View view = baseViewHolder.convertView;
+            if (parentView!=null) {
+                addChildView(recyclerView, parentView, view, i);
+            }
+
+
+        }
+        return new ViewHolder(pView, childViewHolders);
+    }
+
+    public View getParentView(Context context, ViewGroup recyclerView) {
+        return createView(context, R.layout.adpter_pager_recycler_item);
+    }
+
+    /**
+     * 将childView添加到parentView 并设置LayoutParams; 若childView=parentView则不会添加
+     *
+     * @param parentView
+     * @param childView
+     */
+    public void addChildView(ViewGroup recyclerView, ViewGroup parentView, View childView, int childIndex) {
+        if (childView != null && parentView != null&&childView!=parentView) {
+            if (parentView instanceof LinearLayout) {
+                ViewGroup.LayoutParams layoutParams = getChildViewParams(recyclerView, parentView, childView, childIndex);
+                if (layoutParams != null) {
+                    parentView.addView(childView, layoutParams);
+                } else {
+                    parentView.addView(childView);
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取childView的LayoutParams
+     *
+     * @param parentView
+     * @param childView
+     * @param childIndex null则pchildView不设置LayoutParams
+     * @return
+     */
+    public ViewGroup.LayoutParams getChildViewParams(ViewGroup recyclerView, ViewGroup parentView, View childView, int childIndex) {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
+        layoutParams.weight = 1;
+        return layoutParams;
+    }
+
+    /**
+     * 获取parentView的LayoutParams
+     *
+     * @param parentView null则parentView不设置LayoutParams
+     */
+    public ViewGroup.LayoutParams getParentViewParams(ViewGroup recyclerView, View parentView) {
+        if (parentView == null)
+            return null;
+        ViewGroup.LayoutParams layoutParams = parentView.getLayoutParams();
+        if (layoutParams == null) {
+            layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        } else {
+            layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        }
+        return layoutParams;
+    }
+
+    public void onBindParentViewHodler(ViewHolder viewHolder, int pagePosition) {
+        int maxPosition = ((pagePosition + 1) * getChildNum()) - 1;
+        int max = getSize() - 1;
+        maxPosition = maxPosition > max ? max : maxPosition;
+        int minPosition = pagePosition * getChildNum();
+
+        for (int i = 0; i < getChildNum(); i++) {
+            int position = minPosition + i;
+            PagerRecyclerView.BaseViewHolder childViewHolder = viewHolder.getChildViewHolder(i);
+            childViewHolder.setPagePosition(pagePosition);
+            childViewHolder.setAdapter(this);
+            if (position > maxPosition) {
+                onBindNoDataChildView(viewHolder, childViewHolder, pagePosition, i);
+            } else {
+                onBindChildView(viewHolder, childViewHolder, datas.get(position), position, pagePosition, i);
+            }
+        }
+    }
+
+    /**
+     * 建议 若PagerRecyclerView不是ViewPager效果则直接用parentView作为childView
+     * @param context
+     * @param recyclerView
+     * @param parentView
+     * @param childIndex
+     * @return
+     */
+    public abstract PagerRecyclerView.BaseViewHolder onCreateChildViewHolder(Context context, ViewGroup recyclerView,View parentView, int childIndex);
+
     public abstract void onBindChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, K data, int position, int pagePosition, int childIndex);
-    public abstract void onBindNoDataChildView(ViewHolder parentViewHolder,PagerRecyclerView.BaseViewHolder childViewHolder,int pagePosition,int childIndex);
+
+    public abstract void onBindNoDataChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, int pagePosition, int childIndex);
 
     public void setDatas(List<K> datas) {
         this.datas = datas;
@@ -43,40 +154,20 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View parentView = getParentView(parent.getContext());
-        ViewGroup.LayoutParams layoutParams = parentView.getLayoutParams();
-        if (layoutParams == null) {
-            layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        } else {
-            layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        }
-        parentView.setLayoutParams(layoutParams);
-        return new ViewHolder(parentView);
+        return onCreateParentViewHolder(parent.getContext(), parent);
     }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int pagePosition) {
-        int maxPosition = ((pagePosition+1) * getChildNum())-1;
-        int max=getSize()-1;
-        maxPosition = maxPosition >max  ? max : maxPosition;
-        int minPosition = pagePosition * getChildNum();
-        for (int i = 0; i < getChildNum(); i++) {
-            int position = minPosition + i;
-            PagerRecyclerView.BaseViewHolder childViewHolder = getChildView((ViewHolder) holder,pagePosition, i);
-            childViewHolder.setAdapter(this);
-            if (position > maxPosition) {
-                onBindNoDataChildView((ViewHolder) holder, childViewHolder, pagePosition, i);
-            } else {
-                onBindChildView((ViewHolder) holder, childViewHolder,datas.get(position),position,pagePosition,i);
-            }
+        if (holder instanceof ViewHolder) {
+            ViewHolder viewHolder = (ViewHolder) holder;
+            onBindParentViewHodler(viewHolder, pagePosition);
         }
-
     }
 
     public int getPosition(int pagePosition, int childIndex) {
-        if (pagePosition >= 0&&pagePosition<=getItemCount() && childIndex >= 0&&childIndex<=getChildNum()) {
-            int maxPosition = ((pagePosition+1) * getChildNum())-1;
+        if (pagePosition >= 0 && pagePosition <= getItemCount() && childIndex >= 0 && childIndex <= getChildNum()) {
+            int maxPosition = ((pagePosition + 1) * getChildNum()) - 1;
             int position = pagePosition * getChildNum() + childIndex;
             if (position <= maxPosition) {
                 return position;
@@ -88,13 +179,14 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     private int getPagePosition(int position) {
         int pagePosition = 0;
         pagePosition = position / getChildNum();
-        pagePosition=pagePosition % getChildNum() > 0 ? (pagePosition + 1) : pagePosition;
+        pagePosition = pagePosition % getChildNum() > 0 ? (pagePosition + 1) : pagePosition;
         return pagePosition;
     }
 
     private int getSize() {
         return datas.size();
     }
+
     @Override
     public int getItemCount() {
         int size = 0;
@@ -110,10 +202,29 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
         return childNum;
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
+    public boolean isPager(ViewGroup recyclerView) {
+        if (recyclerView != null && recyclerView instanceof PagerRecyclerView) {
+            PagerRecyclerView pagerRecyclerView = (PagerRecyclerView) recyclerView;
+            return pagerRecyclerView.isPager();
+        }
+        return false;
+    }
 
-        public ViewHolder(View itemView) {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        private List<PagerRecyclerView.BaseViewHolder> childViewHolders = new ArrayList<>();
+
+        public ViewHolder(View itemView, List<PagerRecyclerView.BaseViewHolder> childViewHolders) {
             super(itemView);
+            this.childViewHolders = childViewHolders;
+        }
+
+        public PagerRecyclerView.BaseViewHolder getChildViewHolder(int childIndex) {
+            int count = childViewHolders.size();
+            if (count == 0)
+                return null;
+            if (childIndex >= count)
+                return null;
+            return childViewHolders.get(childIndex);
         }
     }
 
@@ -130,7 +241,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
          * @param view     The view whihin the ItemView that was clicked
          * @param position The position of the view int the adapter
          */
-        void onItemChildClick(BasePagerRecyclerAdapter adapter, View view, int position,int pagePosition,int childIndex);
+        void onItemChildClick(BasePagerRecyclerAdapter adapter, View view, int position, int pagePosition, int childIndex);
     }
 
 
@@ -147,7 +258,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
          * @param position The position of the view int the adapter
          * @return true if the callback consumed the long click ,false otherwise
          */
-        boolean onItemChildLongClick(BasePagerRecyclerAdapter adapter, View view, int position,int pagePosition,int childIndex);
+        boolean onItemChildLongClick(BasePagerRecyclerAdapter adapter, View view, int position, int pagePosition, int childIndex);
     }
 
     /**
@@ -159,6 +270,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     public void setOnItemChildClickListener(OnItemChildClickListener listener) {
         mOnItemChildClickListener = listener;
     }
+
     /**
      * Register a callback to be invoked when an itemchild  in this View has
      * been long clicked and held

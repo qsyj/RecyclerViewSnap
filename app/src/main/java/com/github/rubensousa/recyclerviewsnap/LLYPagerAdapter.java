@@ -3,7 +3,6 @@ package com.github.rubensousa.recyclerviewsnap;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import com.wqlin.widget.BasePagerRecyclerAdapter;
 import com.wqlin.widget.PagerRecyclerView;
@@ -12,45 +11,52 @@ import com.wqlin.widget.PagerRecyclerView;
  * Created by wqlin on 2017/10/14.
  */
 
-public class LLYPagerAdapter extends BasePagerRecyclerAdapter<String> {
+public class LLYPagerAdapter extends BasePagerRecyclerAdapter<PagerRecyclerActivity.ItemEntity> {
     public LLYPagerAdapter(int childNum) {
         super(childNum);
     }
 
     @Override
-    public View getParentView(Context context) {
-        return createView(context,R.layout.adapter_pager_match);
-    }
-
-
-    @Override
-    public PagerRecyclerView.BaseViewHolder getChildView(ViewHolder parentViewHolder,int pagePosition,int childIndex) {
-        switch (childIndex) {
-            case 0:
-                return new PagerRecyclerView.BaseViewHolder(parentViewHolder.itemView.findViewById(R.id.ll_child0),pagePosition,childIndex);
-            case 1:
-                return new PagerRecyclerView.BaseViewHolder(parentViewHolder.itemView.findViewById(R.id.ll_child1),pagePosition,childIndex);
-            case 2:
-                return new PagerRecyclerView.BaseViewHolder(parentViewHolder.itemView.findViewById(R.id.ll_child2),pagePosition,childIndex);
+    public PagerRecyclerView.BaseViewHolder onCreateChildViewHolder(Context context,ViewGroup recyclerView,View parentView,int childIndex) {
+        if (!isPager(recyclerView)) {
+            return new PagerRecyclerView.BaseViewHolder(parentView,childIndex);
         }
-        return null;
+        return new PagerRecyclerView.BaseViewHolder(createView(context,R.layout.adapter_pager_v),childIndex);
     }
 
     @Override
-    public void onBindChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, String data, int position, int pagePosition, int childIndex) {
+    public void onBindChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, PagerRecyclerActivity.ItemEntity data, int position, int pagePosition, int childIndex) {
         childViewHolder.getConvertView().setVisibility(View.VISIBLE);
-        ViewGroup viewGroup = (ViewGroup) childViewHolder.getConvertView();
-        int count = viewGroup.getChildCount();
-        for (int i = 0; i < count; i++) {
-            View c = viewGroup.getChildAt(i);
-            if (c instanceof TextView) {
-                ((TextView)c).setText("child"+data);
-            }
-        }
+        childViewHolder.setText(R.id.tv, data.getText());
+        childViewHolder.setImageResource(R.id.iv, data.getImgRes());
     }
 
     @Override
     public void onBindNoDataChildView(ViewHolder parentViewHolder,PagerRecyclerView.BaseViewHolder childViewHolder,int pagePosition,int childIndex) {
         childViewHolder.getConvertView().setVisibility(View.INVISIBLE);
+    }
+
+
+    @Override
+    public View getParentView(Context context, ViewGroup recyclerView) {
+        if (!isPager(recyclerView)) {
+            return createView(context,R.layout.adapter_pager_v);
+        }
+        return super.getParentView(context, recyclerView);
+    }
+
+    @Override
+    public ViewGroup.LayoutParams getParentViewParams(ViewGroup recyclerView,View parentView) {
+        if (!isPager(recyclerView)) {
+            return null;
+        }
+        return super.getParentViewParams(recyclerView,parentView);
+    }
+
+    @Override
+    public ViewGroup.LayoutParams getChildViewParams(ViewGroup recyclerView,ViewGroup parentView, View childView, int childIndex) {
+        if (!isPager(recyclerView))
+            return null;
+        return super.getChildViewParams(recyclerView,parentView, childView, childIndex);
     }
 }
