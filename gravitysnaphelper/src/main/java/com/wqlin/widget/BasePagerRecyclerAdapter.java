@@ -148,6 +148,10 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
         notifyDataSetChanged();
     }
 
+    public List<K> getDatas() {
+        return datas;
+    }
+
     public View createView(Context context, int res) {
         return LayoutInflater.from(context).inflate(res, null);
     }
@@ -184,6 +188,8 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     }
 
     private int getSize() {
+        if (datas==null)
+            return 0;
         return datas.size();
     }
 
@@ -200,6 +206,10 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
 
     public int getChildNum() {
         return childNum;
+    }
+
+    public void setChildNum(int childNum) {
+        this.childNum = childNum;
     }
 
     public boolean isPager(ViewGroup recyclerView) {
