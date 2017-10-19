@@ -7,7 +7,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
-        <activity android:name=".MainActivity">
+        <activity android:name=".PagerRecyclerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -15,7 +15,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".GridActivity"/>
-        <activity android:name=".PagerRecyclerActivity">
+        <activity android:name=".MainActivity">
         </activity>
     </application>
 

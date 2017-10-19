@@ -4,17 +4,6 @@ RecyclerView snapping example with SnapHelper
 
 <img src="screens/snap_googleplay.gif" width=300></img>   <img src="screens/snap_final.gif" width=300></img>
 
-## How to
-
-If you need snapping support to start, top, end or bottom, use GravitySnapHelper.
-
-Add this to your build.gradle:
-
-```groovy
-compile 'com.github.rubensousa:gravitysnaphelper:1.3'
-```
-
-Otherwise, center snapping is done with LinearSnapHelper (part of the recyclerview-v7 package).
 
 ### Snapping center:
 

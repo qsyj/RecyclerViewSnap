@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.wqlin.widget.PagerRecyclerView
-    android:id="@+id/pagerRecyclerView"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.github.rubensousa.recyclerviewsnap.PagerRecyclerActivity">
+    <com.wqlin.widget.PagerRecyclerView
+        android:id="@+id/pagerRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <com.wqlin.widget.CirclePageIndicator
+        android:id="@+id/page_indicator"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        app:fillColor="#D8D8D8"
+        app:pageColor="#F2F2F2"
+        app:radius="15dp"
+        app:space="45dp"
+        app:strokeColor="@android:color/transparent"
+        android:layout_marginBottom="40dp"/>
+</RelativeLayout>
 
-</com.wqlin.widget.PagerRecyclerView>

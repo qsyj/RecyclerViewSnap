@@ -5,13 +5,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.wqlin.widget.PagerRecyclerAdapter;
+import com.wqlin.widget.BasePagerRecyclerAdapter;
+import com.wqlin.widget.PagerRecyclerView;
 
 /**
  * Created by wqlin on 2017/10/14.
  */
 
-public class LLYPagerAdapter extends PagerRecyclerAdapter<String> {
+public class LLYPagerAdapter extends BasePagerRecyclerAdapter<String> {
     public LLYPagerAdapter(int childNum) {
         super(childNum);
     }
@@ -23,22 +24,22 @@ public class LLYPagerAdapter extends PagerRecyclerAdapter<String> {
 
 
     @Override
-    public View getChildView(View parentView, int pagePosition, int childIndex) {
+    public PagerRecyclerView.BaseViewHolder getChildView(ViewHolder parentViewHolder,int pagePosition,int childIndex) {
         switch (childIndex) {
             case 0:
-                return parentView.findViewById(R.id.ll_child0);
+                return new PagerRecyclerView.BaseViewHolder(parentViewHolder.itemView.findViewById(R.id.ll_child0),pagePosition,childIndex);
             case 1:
-                return parentView.findViewById(R.id.ll_child1);
+                return new PagerRecyclerView.BaseViewHolder(parentViewHolder.itemView.findViewById(R.id.ll_child1),pagePosition,childIndex);
             case 2:
-                return parentView.findViewById(R.id.ll_child2);
+                return new PagerRecyclerView.BaseViewHolder(parentViewHolder.itemView.findViewById(R.id.ll_child2),pagePosition,childIndex);
         }
         return null;
     }
 
     @Override
-    public void onBindChildView(View parentView, View childView, String data, int position, int pagePosition, int childIndex) {
-        childView.setVisibility(View.VISIBLE);
-        ViewGroup viewGroup = (ViewGroup) childView;
+    public void onBindChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, String data, int position, int pagePosition, int childIndex) {
+        childViewHolder.getConvertView().setVisibility(View.VISIBLE);
+        ViewGroup viewGroup = (ViewGroup) childViewHolder.getConvertView();
         int count = viewGroup.getChildCount();
         for (int i = 0; i < count; i++) {
             View c = viewGroup.getChildAt(i);
@@ -49,7 +50,7 @@ public class LLYPagerAdapter extends PagerRecyclerAdapter<String> {
     }
 
     @Override
-    public void onBindNoDataChildView(View parentView, View childView, int pagePosition, int childIndex) {
-        childView.setVisibility(View.INVISIBLE);
+    public void onBindNoDataChildView(ViewHolder parentViewHolder,PagerRecyclerView.BaseViewHolder childViewHolder,int pagePosition,int childIndex) {
+        childViewHolder.getConvertView().setVisibility(View.INVISIBLE);
     }
 }
