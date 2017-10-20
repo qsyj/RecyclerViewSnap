@@ -1,6 +1,7 @@
 package com.github.rubensousa.recyclerviewsnap;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 
@@ -8,7 +9,6 @@ import com.wqlin.widget.CirclePageIndicator;
 import com.wqlin.widget.PagerRecyclerView;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -57,28 +57,16 @@ public class PagerRecyclerActivity extends AppCompatActivity {
             R.drawable.ic_inbox_48dp,
             R.drawable.ic_photos_48dp,
             R.drawable.ic_sheets_48dp};
+    private ArrayList<ItemEntity> mList;
+    private LLYPagerAdapter mAdapter;
+    private MyRunnable mRunnable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pager_recycler);
         mPagerRecyclerView = (PagerRecyclerView) findViewById(R.id.pagerRecyclerView);
-        //是否设置成ViewPager效果
-        mPagerRecyclerView.setPager(isPager);
-        if (!isPager) {
-            mPagerRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        }
-        mCirclePageIndicator = (CirclePageIndicator) findViewById(R.id.page_indicator);
-        int childNum = 3;
-        if (!isPager)
-            childNum = 1;
-        LLYPagerAdapter adapter=new LLYPagerAdapter(childNum);
-        List<ItemEntity> list=new ArrayList<ItemEntity>();
-
-        for (int i = 0; i < 11; i++) {
-            list.add(new ItemEntity("child" + i,res[i]));
-        }
-        adapter.setDatas(list);
-        mPagerRecyclerView.setAdapter(adapter);
+        mRunnable = new MyRunnable();
         final Timer timer =new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -86,8 +74,10 @@ public class PagerRecyclerActivity extends AppCompatActivity {
                 //                mPagerRecyclerView.setCurrentItem(2);
 //                mPagerRecyclerView.setFlingMorePage(!mPagerRecyclerView.isFlingMorePage());
 //                timer.cancel();
+                new Handler(getMainLooper()).postDelayed(mRunnable, 0);
+
             }
-        },0,15000);
+        },0,5000);
         /*new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -95,7 +85,55 @@ public class PagerRecyclerActivity extends AppCompatActivity {
                 mPagerRecyclerView.setFlingMorePage(!mPagerRecyclerView.isFlingMorePage());
             }
         }, 5000);*/
+
+    }
+    class MyRunnable implements Runnable{
+
+        @Override
+        public void run() {
+            //是否设置成ViewPager效果
+            mPagerRecyclerView.setPager(isPager);
+            if (!init()) {
+                switchPager();
+            }
+            isPager = !isPager;
+        }
+    }
+    private boolean init() {
+        if (mCirclePageIndicator!=null)
+            return false;
+        if (!isPager) {
+            mPagerRecyclerView.setLayoutManager(new LinearLayoutManager(PagerRecyclerActivity.this));
+        }
+        mCirclePageIndicator = (CirclePageIndicator) findViewById(R.id.page_indicator);
+
+        mAdapter = new LLYPagerAdapter(getChildNum());
+        mList = new ArrayList<ItemEntity>();
+
+        for (int i = 0; i < 11; i++) {
+            mList.add(new ItemEntity("child" + i,res[i]));
+        };
+        mAdapter.setDatas(mList);
+        mPagerRecyclerView.setAdapter(mAdapter);
         mCirclePageIndicator.setPagerRecyclerView(mPagerRecyclerView);
+        return true;
+    }
+
+    private int getChildNum() {
+        int childNum = 3;
+        if (!isPager)
+            childNum = 1;
+        return childNum;
+    }
+    private void switchPager() {
+        mAdapter.setDatas(null);
+        mPagerRecyclerView.getRecycledViewPool().clear();
+        mPagerRecyclerView.removeAllViews();
+        if (!isPager) {
+            mPagerRecyclerView.setLayoutManager(new LinearLayoutManager(PagerRecyclerActivity.this));
+        }
+        mAdapter.setChildNum(getChildNum());
+        mAdapter.setDatas(mList);
     }
     public static class ItemEntity{
         private String text;
