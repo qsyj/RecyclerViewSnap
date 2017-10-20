@@ -24,8 +24,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     private OnItemChildLongClickListener mOnItemChildLongClickListener;
 
     public BasePagerRecyclerAdapter(int childNum) {
-        if (childNum <= 0)
-            new Throwable("childNum must > 0");
+        checkChildNum(childNum);
         this.childNum = childNum;
         datas = new ArrayList<>();
     }
@@ -209,9 +208,14 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     }
 
     public void setChildNum(int childNum) {
+        checkChildNum(childNum);
         this.childNum = childNum;
     }
 
+    private void checkChildNum(int childNum) {
+        if (childNum <= 0)
+            new Throwable("childNum must > 0");
+    }
     public boolean isPager(ViewGroup recyclerView) {
         if (recyclerView != null && recyclerView instanceof PagerRecyclerView) {
             PagerRecyclerView pagerRecyclerView = (PagerRecyclerView) recyclerView;
