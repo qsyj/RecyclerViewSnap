@@ -1,0 +1,105 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    //这个没写的话在执行gradlew bintrayupload时也会提示加上
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile "com.android.support:recyclerview-v7:$rootProject.ext.supportLibVersion"
+}
+
+version = "0.1"	//aar的版本号
+def siteUrl = 'https://github.com/qsyj/RecyclerViewSnap.git'    // 项目主页
+def gitUrl = 'git@github.com:qsyj/RecyclerViewSnap.git' // 项目的git地址
+def module_name = 'snaphelper'	// 项目的名称
+group = 'com.wqlin.uikit'	// 所在组
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+                name 'snaphelper' // 名称
+                url siteUrl
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0' // 开源协议名称
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt' // 协议地址
+                    }
+                }
+                developers {
+                    developer {
+                        id 'wqlin'	// 账号
+                        name 'wqlin'	// 名称
+                        email 'wangqinglin110@gmail.com' // 邮箱地址
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    options.encoding = "UTF-8"
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+bintray {
+    // 读取配置文件中的用户名和key
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['archives']
+    pkg {
+        repo = "maven"		// 你在bintray上创建的库的名称
+        name = module_name               // 在jcenter中的项目名称
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+}

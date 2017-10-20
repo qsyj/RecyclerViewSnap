@@ -18,6 +18,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    //这个没写的话在执行gradlew bintrayupload时也会提示加上
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
@@ -26,6 +30,6 @@ dependencies {
     compile "com.android.support:appcompat-v7:$rootProject.ext.supportLibVersion"
     compile "com.android.support:recyclerview-v7:$rootProject.ext.supportLibVersion"
     compile "com.android.support:cardview-v7:$rootProject.ext.supportLibVersion"
-    compile project(':gravitysnaphelper')
+    compile project(':snaphelper')
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
 }
