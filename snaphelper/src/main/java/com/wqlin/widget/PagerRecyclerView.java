@@ -32,6 +32,9 @@ import android.widget.TextView;
 import com.wqlin.snap.GravityPagerSnapHelper;
 import com.wqlin.snap.GravitySnapHelper;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -47,7 +50,7 @@ import java.util.Set;
 
 public class PagerRecyclerView extends RecyclerView {
     private final String TAG = PagerRecyclerView.class.getSimpleName();
-    private boolean isLog = false;
+    private boolean isLog = true;
     private int mCurrentPosition = -1;
     /**
      * 是否需要设置成ViewPager效果  不是则为正常RecyclerView <P>
@@ -126,15 +129,13 @@ public class PagerRecyclerView extends RecyclerView {
     public void setCurrentItem(int item, boolean smoothScroll) {
         if (!isPager)
             return;
-        if (item != mCurrentPosition) {
-            LayoutManager layoutManager = getLayoutManager();
-            if (layoutManager instanceof LinearLayoutManager) {
-                LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
-                if (smoothScroll) {
-                    linearLayoutManager.smoothScrollToPosition(PagerRecyclerView.this,null,item);
-                } else {
-                    linearLayoutManager.scrollToPositionWithOffset(item, 0);
-                }
+        LayoutManager layoutManager = getLayoutManager();
+        if (layoutManager instanceof LinearLayoutManager) {
+            LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+            if (smoothScroll) {
+                linearLayoutManager.smoothScrollToPosition(PagerRecyclerView.this,null,item);
+            } else {
+                linearLayoutManager.scrollToPositionWithOffset(item, 0);
             }
         }
     }
@@ -278,6 +279,128 @@ public class PagerRecyclerView extends RecyclerView {
                 }
             }
         }
+    }
+
+    @Override
+    public void scrollBy(int x, int y) {
+//        if (getScrollState() != SCROLL_STATE_DRAGGING) {
+////            invokeMethod(this, "setScrollState",new Class[]{int.class} , new Object[]{SCROLL_STATE_DRAGGING});
+//            setSuperField(this,"mScrollState",SCROLL_STATE_DRAGGING);
+//        }
+        super.scrollBy(x, y);
+    }
+
+    public void endScrollBy() {
+        if (!isPager)
+            return;
+        LayoutManager layoutManager = this.getLayoutManager();
+        if (layoutManager instanceof LinearLayoutManager) {
+            LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+            int firstPosition = linearLayoutManager.findFirstVisibleItemPosition();
+            int lastPosition = linearLayoutManager.findLastVisibleItemPosition();
+            View currentView;
+            int position;
+            if (mCurrentPosition >= firstPosition && mCurrentPosition <= lastPosition) {
+                currentView = linearLayoutManager.findViewByPosition(mCurrentPosition);
+                position = mCurrentPosition;
+            } else {
+                currentView = linearLayoutManager.findViewByPosition(firstPosition);
+                position = firstPosition;
+            }
+            Rect r = new Rect();
+            currentView.getLocalVisibleRect(r); //获取在当前窗口内的绝对坐标
+            int visibleLeft = r.left;
+            int visibleRight = r.right;
+            int width = currentView.getWidth();
+            int positionOffsetPixels = 0;
+            if (visibleLeft > 0 ) {
+                positionOffsetPixels = visibleLeft;
+            }
+            if (visibleRight < width) {
+                positionOffsetPixels = visibleRight - width;
+            }
+            float positionOffset = (positionOffsetPixels*1f) / (width*1f);
+            int netPosition=position ;
+            if (positionOffset < -0.5) {
+                netPosition = mCurrentPosition - 1;
+
+            } else if (positionOffset > 0.5){
+                netPosition = mCurrentPosition + 1;
+            }
+            netPosition = netPosition < 0 ? 0 : netPosition;
+            int count = getAdapter().getItemCount() - 1;
+            netPosition = netPosition > count ? count : netPosition;
+            setCurrentItem(netPosition,true);
+
+        }
+    }
+    public static void setSuperField(Object object,String fieldName,Object value) {
+        try {
+            Class superclass=object.getClass().getSuperclass();
+            Field f=superclass.getDeclaredField(fieldName);
+            f.setAccessible(true);//为 true 则表示反射的对象在使用时取消 Java 语言访问检查
+            f.set(object,value);
+        } catch (Exception ep) {
+            ep.printStackTrace();
+        }
+
+    }
+    /**
+     * 循环向上转型, 获取对象的 DeclaredMethod
+     * @param object : 子类对象
+     * @param methodName : 父类中的方法名
+     * @param parameterTypes : 父类中的方法参数类型
+     * @return 父类中的方法对象
+     */
+
+    public static Method getDeclaredMethod(Object object, String methodName, Class<?> ... parameterTypes){
+        Method method = null ;
+
+        for(Class<?> clazz = object.getClass() ; clazz != Object.class ; clazz = clazz.getSuperclass()) {
+            try {
+                method = clazz.getDeclaredMethod(methodName, parameterTypes) ;
+                return method ;
+            } catch (Exception e) {
+                //这里甚么都不要做！并且这里的异常必须这样写，不能抛出去。
+                //如果这里的异常打印或者往外抛，则就不会执行clazz = clazz.getSuperclass(),最后就不会进入到父类中了
+
+            }
+        }
+
+        return null;
+    }
+    /**
+     * 直接调用对象方法, 而忽略修饰符(private, protected, default)
+     * @param object : 子类对象
+     * @param methodName : 父类中的方法名
+     * @param parameterTypes : 父类中的方法参数类型
+     * @param parameters : 父类中的方法参数
+     * @return 父类中方法的执行结果
+     */
+
+    public static Object invokeMethod(Object object, String methodName, Class<?> [] parameterTypes,
+                                      Object [] parameters) {
+        //根据 对象、方法名和对应的方法参数 通过反射 调用上面的方法获取 Method 对象
+        Method method = getDeclaredMethod(object, methodName, parameterTypes) ;
+
+        //抑制Java对方法进行检查,主要是针对私有方法而言
+        method.setAccessible(true) ;
+
+        try {
+            if(null != method) {
+
+                //调用object 的 method 所代表的方法，其方法的参数是 parameters
+                return method.invoke(object, parameters) ;
+            }
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
     public interface OnPageChangeListener {
 

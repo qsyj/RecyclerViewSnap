@@ -1,6 +1,8 @@
 package com.wqlin.widget;
 
 import android.content.Context;
+import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -11,6 +13,7 @@ import android.widget.LinearLayout;
 import com.github.rubensousa.gravitysnaphelper.R;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -18,7 +21,7 @@ import java.util.List;
  */
 
 public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
-    private List<K> datas;
+    private List<K> mData;
     private int childNum;
     private OnItemChildClickListener mOnItemChildClickListener;
     private OnItemChildLongClickListener mOnItemChildLongClickListener;
@@ -26,7 +29,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     public BasePagerRecyclerAdapter(int childNum) {
         checkChildNum(childNum);
         this.childNum = childNum;
-        datas = new ArrayList<>();
+        mData = new ArrayList<>();
     }
 
     private ViewHolder onCreateParentViewHolder(Context context, ViewGroup recyclerView) {
@@ -123,7 +126,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
             if (position > maxPosition) {
                 onBindNoDataChildView(viewHolder, childViewHolder, pagePosition, i);
             } else {
-                onBindChildView(viewHolder, childViewHolder, datas.get(position), position, pagePosition, i);
+                onBindChildView(viewHolder, childViewHolder, mData.get(position), position, pagePosition, i);
             }
         }
     }
@@ -142,13 +145,37 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
 
     public abstract void onBindNoDataChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, int pagePosition, int childIndex);
 
-    public void setDatas(List<K> datas) {
-        this.datas = datas;
+    public void setNewData(List<K> data) {
+        this.mData = data;
         notifyDataSetChanged();
     }
 
-    public List<K> getDatas() {
-        return datas;
+    public void addData(@NonNull Collection<? extends K> newData) {
+        mData.addAll(newData);
+        notifyItemRangeInserted(mData.size() - newData.size(), newData.size());
+        compatibilityDataSizeChanged(newData.size());
+    }
+
+    public void addData(@IntRange(from = 0) int position, @NonNull K data) {
+        mData.add(position, data);
+        notifyItemInserted(position);
+        compatibilityDataSizeChanged(1);
+    }
+    public void addData(@NonNull K data) {
+        mData.add(data);
+        notifyItemInserted(mData.size());
+        compatibilityDataSizeChanged(1);
+    }
+
+    private void compatibilityDataSizeChanged(int size) {
+        final int dataSize = mData == null ? 0 : mData.size();
+        if (dataSize == size) {
+            notifyDataSetChanged();
+        }
+    }
+
+    public List<K> getData() {
+        return mData;
     }
 
     public View createView(Context context, int res) {
@@ -187,15 +214,15 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     }
 
     private int getSize() {
-        if (datas==null)
+        if (mData ==null)
             return 0;
-        return datas.size();
+        return mData.size();
     }
 
     @Override
     public int getItemCount() {
         int size = 0;
-        if (datas != null && (size = datas.size()) > 0) {
+        if (mData != null && (size = mData.size()) > 0) {
             int count = size / getChildNum();
             count = size % getChildNum() > 0 ? (count + 1) : count;
             return count;

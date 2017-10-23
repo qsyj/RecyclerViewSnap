@@ -26,11 +26,14 @@ import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.view.GestureDetectorCompat;
+import android.support.v4.view.MotionEventCompat;
+import android.support.v4.view.ViewConfigurationCompat;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 import com.github.rubensousa.gravitysnaphelper.R;
 
@@ -65,6 +68,11 @@ public class CirclePageIndicator extends View implements PageIndicator {
     private boolean mSnap;
     private List<ItemInfo> mItemInfos = new ArrayList<>();
     private GestureDetectorCompat mGestureDetector;
+
+    private int mTouchSlop;
+    private float mLastMotionX = -1;
+    private int mActivePointerId = INVALID_POINTER;
+    private boolean mIsDragging;
 
     public CirclePageIndicator(Context context) {
         this(context, null);
@@ -112,6 +120,9 @@ public class CirclePageIndicator extends View implements PageIndicator {
 
         a.recycle();
 
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
+        mTouchSlop = ViewConfigurationCompat.getScaledPagingTouchSlop(configuration);
+
         mGestureDetector = new GestureDetectorCompat(getContext(), new GestureDetector.SimpleOnGestureListener(){
             @Override
             public boolean onDown(MotionEvent e) {
@@ -126,8 +137,110 @@ public class CirclePageIndicator extends View implements PageIndicator {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return mGestureDetector.onTouchEvent(event);
+    public boolean onTouchEvent(MotionEvent ev) {
+        mGestureDetector.onTouchEvent(ev);
+        if (super.onTouchEvent(ev)) {
+            return true;
+        }
+        if (((mViewPager == null) || (mViewPager.getAdapter().getCount() == 0))&&
+                (mPagerRecyclerView==null ||mPagerRecyclerView.getAdapter().getItemCount()==0)) {
+            return false;
+        }
+
+        final int action = ev.getAction() & MotionEventCompat.ACTION_MASK;
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
+                mLastMotionX = ev.getX();
+                break;
+
+            case MotionEvent.ACTION_MOVE: {
+                final int activePointerIndex = MotionEventCompat.findPointerIndex(ev, mActivePointerId);
+                final float x = MotionEventCompat.getX(ev, activePointerIndex);
+                final float deltaX = x - mLastMotionX;
+
+                if (!mIsDragging) {
+                    if (Math.abs(deltaX) > mTouchSlop) {
+                        mIsDragging = true;
+                    }
+                }
+
+                if (mIsDragging) {
+                    mLastMotionX = x;
+                    if (mViewPager!=null&&mViewPager.getAdapter().getCount()>0&&(mViewPager.isFakeDragging() || mViewPager.beginFakeDrag())) {
+                        mViewPager.fakeDragBy(deltaX);
+                    }else if (mPagerRecyclerView != null&&mPagerRecyclerView.getAdapter().getItemCount()>0) {
+                        mPagerRecyclerView.scrollBy(-(int) deltaX,0);
+                    }
+                }
+
+                break;
+            }
+
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                if (!mIsDragging) {
+                    int count ;
+                    if (mViewPager != null && mViewPager.getAdapter().getCount() > 0) {
+                        count = mViewPager.getAdapter().getCount();
+                    } else {
+                        count = mPagerRecyclerView.getAdapter().getItemCount();
+                    }
+                    final int width = getWidth();
+                    final float halfWidth = width / 2f;
+                    final float sixthWidth = width / 6f;
+
+                    if ((mCurrentPage > 0) && (ev.getX() < halfWidth - sixthWidth)) {
+                        if (action != MotionEvent.ACTION_CANCEL) {
+                            if (mViewPager != null && mViewPager.getAdapter().getCount() > 0) {
+                                mViewPager.setCurrentItem(mCurrentPage - 1);
+                            } else if (mPagerRecyclerView != null && mPagerRecyclerView.getAdapter().getItemCount() > 0) {
+                                mPagerRecyclerView.setCurrentItem(mCurrentPage - 1);
+                            }
+                        }
+                        return true;
+                    } else if ((mCurrentPage < count - 1) && (ev.getX() > halfWidth + sixthWidth)) {
+                        if (action != MotionEvent.ACTION_CANCEL) {
+                            if (mViewPager != null && mViewPager.getAdapter().getCount() > 0) {
+                                mViewPager.setCurrentItem(mCurrentPage + 1);
+                            } else if (mPagerRecyclerView != null && mPagerRecyclerView.getAdapter().getItemCount() > 0){
+                                mPagerRecyclerView.setCurrentItem(mCurrentPage + 1);
+                            }
+                        }
+                        return true;
+                    }
+                }
+
+                mIsDragging = false;
+                mActivePointerId = INVALID_POINTER;
+                if (mViewPager != null && mViewPager.getAdapter().getCount() > 0 && mViewPager.isFakeDragging()) {
+                    mViewPager.endFakeDrag();
+                } else if (mPagerRecyclerView != null &&
+                        mPagerRecyclerView.getAdapter().getItemCount() > 0){
+                    mPagerRecyclerView.endScrollBy();
+                }
+                break;
+
+            case MotionEventCompat.ACTION_POINTER_DOWN: {
+                final int index = MotionEventCompat.getActionIndex(ev);
+                mLastMotionX = MotionEventCompat.getX(ev, index);
+                mActivePointerId = MotionEventCompat.getPointerId(ev, index);
+                break;
+            }
+
+            case MotionEventCompat.ACTION_POINTER_UP:
+                final int pointerIndex = MotionEventCompat.getActionIndex(ev);
+                final int pointerId = MotionEventCompat.getPointerId(ev, pointerIndex);
+                if (pointerId == mActivePointerId) {
+                    final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+                    mActivePointerId = MotionEventCompat.getPointerId(ev, newPointerIndex);
+                }
+                mLastMotionX = MotionEventCompat.getX(ev, MotionEventCompat.findPointerIndex(ev, mActivePointerId));
+                break;
+        }
+
+        return true;
+//        return mGestureDetector.onTouchEvent(event);
     }
 
     private int getPosition(float x, float y) {
@@ -413,7 +526,7 @@ public class CirclePageIndicator extends View implements PageIndicator {
 
     @Override
     public void onPageSelected(int position) {
-        if (mSnap || mScrollState == ViewPager.SCROLL_STATE_IDLE) {
+        if (mSnap || (mViewPager!=null&&mScrollState == ViewPager.SCROLL_STATE_IDLE)||mPagerRecyclerView!=null) {
             mCurrentPage = position;
             mSnapPage = position;
             mPageOffset = 0f;

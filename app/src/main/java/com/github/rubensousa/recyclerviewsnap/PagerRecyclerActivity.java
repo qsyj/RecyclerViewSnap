@@ -77,7 +77,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
                 new Handler(getMainLooper()).postDelayed(mRunnable, 0);
 
             }
-        },0,5000);
+        },0,15000000);
         /*new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -113,7 +113,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
         for (int i = 0; i < 11; i++) {
             mList.add(new ItemEntity("child" + i,res[i]));
         };
-        mAdapter.setDatas(mList);
+        mAdapter.setNewData(mList);
         mPagerRecyclerView.setAdapter(mAdapter);
         mCirclePageIndicator.setPagerRecyclerView(mPagerRecyclerView);
         return true;
@@ -126,14 +126,14 @@ public class PagerRecyclerActivity extends AppCompatActivity {
         return childNum;
     }
     private void switchPager() {
-        mAdapter.setDatas(null);
+        mAdapter.setNewData(null);
         mPagerRecyclerView.getRecycledViewPool().clear();
         mPagerRecyclerView.removeAllViews();
         if (!isPager) {
             mPagerRecyclerView.setLayoutManager(new LinearLayoutManager(PagerRecyclerActivity.this));
         }
         mAdapter.setChildNum(getChildNum());
-        mAdapter.setDatas(mList);
+        mAdapter.setNewData(mList);
     }
     public static class ItemEntity{
         private String text;
