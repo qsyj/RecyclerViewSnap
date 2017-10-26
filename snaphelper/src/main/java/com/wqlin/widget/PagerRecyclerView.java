@@ -50,7 +50,7 @@ import java.util.Set;
 
 public class PagerRecyclerView extends RecyclerView {
     private final String TAG = PagerRecyclerView.class.getSimpleName();
-    private boolean isLog = true;
+    private boolean isLog = false;
     private int mCurrentPosition = -1;
     /**
      * 是否需要设置成ViewPager效果  不是则为正常RecyclerView <P>

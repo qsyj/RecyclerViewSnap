@@ -352,7 +352,7 @@ public class CirclePageIndicator extends View implements PageIndicator {
         } else {
             count = mPagerRecyclerView.getAdapter().getItemCount();
         }
-        if (count == 0) {
+        if (count == 0 ||count==1) {
             return;
         }
 

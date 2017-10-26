@@ -30,7 +30,7 @@ dependencies {
     compile "com.android.support:recyclerview-v7:$rootProject.ext.supportLibVersion"
 }
 
-version = "0.2"	//aar的版本号
+version = "0.5"	//aar的版本号
 def siteUrl = 'https://github.com/qsyj/RecyclerViewSnap.git'    // 项目主页
 def gitUrl = 'git@github.com:qsyj/RecyclerViewSnap.git' // 项目的git地址
 def module_name = 'snaphelper'	// 项目的名称

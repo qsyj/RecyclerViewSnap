@@ -139,7 +139,7 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
      * @param childIndex
      * @return
      */
-    public abstract PagerRecyclerView.BaseViewHolder onCreateChildViewHolder(Context context, ViewGroup recyclerView,View parentView, int childIndex);
+    public abstract PagerRecyclerView.BaseViewHolder onCreateChildViewHolder(Context context, ViewGroup recyclerView, View parentView, int childIndex);
 
     public abstract void onBindChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, K data, int position, int pagePosition, int childIndex);
 
@@ -206,10 +206,10 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
         return -1;
     }
 
-    private int getPagePosition(int position) {
+    public int getPagePosition(int position) {
         int pagePosition = 0;
         pagePosition = position / getChildNum();
-        pagePosition = pagePosition % getChildNum() > 0 ? (pagePosition + 1) : pagePosition;
+        pagePosition = position % getChildNum() > 0 ? (pagePosition + 1) : pagePosition;
         return pagePosition;
     }
 
