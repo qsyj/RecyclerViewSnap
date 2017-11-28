@@ -112,7 +112,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
         mAdapter = new LLYPagerAdapter(getChildNum());
         mList = new ArrayList<ItemEntity>();
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 12; i++) {//12
             mList.add(new ItemEntity("child" + i,res[i]));
         };
         mAdapter.setNewData(mList);

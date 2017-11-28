@@ -25,6 +25,7 @@ import android.graphics.Paint.Style;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.IntRange;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewConfigurationCompat;
@@ -404,7 +405,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         canvas.drawCircle(dX, dY, mRadius, mPaintFill);
     }
 
-    public void setPagerRecyclerView(PagerRecyclerView view, final int bannerCount) {
+    public void setPagerRecyclerView(PagerRecyclerView view,@IntRange(from = 1)  final int bannerCount) {
         this.bannerCount = bannerCount;
         if (mPagerRecyclerView == view) {
             return;
@@ -417,13 +418,18 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         mPagerRecyclerView.removeOnPageChangeListener(this);
         mPagerRecyclerView.addOnPageChangeListener(this);
         addBanner();
-        if (mCurrentPage == 0) {
+        if (isSupportLoop()&&mCurrentPage == 0) {
             setCurrentItem(bannerCount);
         }
         invalidate();
     }
 
-    public void setPagerRecyclerView(PagerRecyclerView view, int initialPosition,int bannerCount) {
+    private boolean isSupportLoop() {
+        if (bannerCount==1||bannerCount==0)
+            return false;
+        return true;
+    }
+    public void setPagerRecyclerView(PagerRecyclerView view, int initialPosition,@IntRange(from = 1) int bannerCount) {
         setPagerRecyclerView(view,bannerCount);
         setCurrentItem(initialPosition);
     }
@@ -436,6 +442,8 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         if (mPagerRecyclerView == null) {
             throw new IllegalStateException("PagerRecyclerView has not been bound.");
         }
+        if (bannerCount==0||bannerCount==1)
+            return;
         if (item == 0) {
             addBanner();
             setCurrentItem(bannerCount);
@@ -486,7 +494,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     }
 
     private boolean isAddBanner(int position) {
-        if (bannerCount==0)
+        if (!isSupportLoop())
             return false;
         if (mPagerRecyclerView==null)
             return false;
@@ -503,7 +511,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         }
     }
     private void addBanner() {
-        if (bannerCount==0)
+        if (!isSupportLoop())
             return;
         if (mPagerRecyclerView==null)
             return;
