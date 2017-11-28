@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 
+import com.wqlin.widget.BannerCirclePageIndicator;
+import com.wqlin.widget.BasePagerRecyclerAdapter;
 import com.wqlin.widget.CirclePageIndicator;
 import com.wqlin.widget.PagerRecyclerView;
 
@@ -15,7 +17,7 @@ import java.util.TimerTask;
 public class PagerRecyclerActivity extends AppCompatActivity {
 
     private PagerRecyclerView mPagerRecyclerView;
-    private CirclePageIndicator mCirclePageIndicator;
+    private BannerCirclePageIndicator mCirclePageIndicator;
     private boolean isPager=true;
     private int[] res = new int[]{R.drawable.ic_docs_48dp,
             R.drawable.ic_drive_48dp,
@@ -58,7 +60,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
             R.drawable.ic_photos_48dp,
             R.drawable.ic_sheets_48dp};
     private ArrayList<ItemEntity> mList;
-    private LLYPagerAdapter mAdapter;
+    private BasePagerRecyclerAdapter mAdapter;
     private MyRunnable mRunnable;
 
     @Override
@@ -105,17 +107,18 @@ public class PagerRecyclerActivity extends AppCompatActivity {
         if (!isPager) {
             mPagerRecyclerView.setLayoutManager(new LinearLayoutManager(PagerRecyclerActivity.this));
         }
-        mCirclePageIndicator = (CirclePageIndicator) findViewById(R.id.page_indicator);
+        mCirclePageIndicator = (BannerCirclePageIndicator) findViewById(R.id.page_indicator);
 
         mAdapter = new LLYPagerAdapter(getChildNum());
         mList = new ArrayList<ItemEntity>();
 
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < 12; i++) {
             mList.add(new ItemEntity("child" + i,res[i]));
         };
         mAdapter.setNewData(mList);
         mPagerRecyclerView.setAdapter(mAdapter);
-        mCirclePageIndicator.setPagerRecyclerView(mPagerRecyclerView);
+        mCirclePageIndicator.setPagerRecyclerView(mPagerRecyclerView,4);
+//        mCirclePageIndicator.setPagerRecyclerView(mPagerRecyclerView);
         return true;
     }
 

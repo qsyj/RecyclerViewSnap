@@ -42,10 +42,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by wqlin on 2017/10/14. <p>
+ * Created by wqlin on 2017/10/23. <p>
  * 实现ViewPager的效果 </p>
  * Adapter必须使用{@link BasePagerRecyclerAdapter}  <p>
- * {@link #isFlingMorePage} 快速滑动是否翻动多页
+ * {@link #isFlingMorePage} 快速滑动是否翻动多页 <p>
+ * {@link #isPager} 是否需要设置成ViewPager效果  不是则为正常RecyclerView   false时会清除所有滑动监听
  */
 
 public class PagerRecyclerView extends RecyclerView {
@@ -217,39 +218,43 @@ public class PagerRecyclerView extends RecyclerView {
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
             if (!isPager)
                 return;
+            if (recyclerView.getAdapter()==null)
+                return;
+            int pageX = recyclerView.getPaddingLeft();
             LayoutManager layoutManager = recyclerView.getLayoutManager();
             if (layoutManager instanceof LinearLayoutManager) {
                 LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
-                int firstPosition = linearLayoutManager.findFirstVisibleItemPosition();
-                int lastPosition = linearLayoutManager.findLastVisibleItemPosition();
                 View currentView;
-                int position;
-                if (mCurrentPosition >= firstPosition && mCurrentPosition <= lastPosition) {
-                    currentView = linearLayoutManager.findViewByPosition(mCurrentPosition);
-                    position = mCurrentPosition;
-                } else {
-                    currentView = linearLayoutManager.findViewByPosition(firstPosition);
-                    position = firstPosition;
+                int position = 0;
+                currentView = getChildAt(0);
+                int childCount = getChildCount();
+                int vWidth0 = 0;
+                for (int i = 0; i < childCount; i++) {
+                    View childView = getChildAt(i);
+                    Rect r = new Rect();
+                    childView.getLocalVisibleRect(r); //获取在当前窗口内的绝对坐标
+                    /*int visibleLeft = r.left;
+                    int visibleRight = r.right;*/
+                    int vWidth = r.right - r.left;
+                    if (vWidth > vWidth0) {
+                        vWidth0 = vWidth;
+                        position = linearLayoutManager.getPosition(childView);
+                        currentView = getChildAt(i);
+                    }
                 }
-                /*int[] location = new int[2];
-                current.getLocationInWindow(location); //获取在当前窗口内的绝对坐标*/
-                Rect r = new Rect();
-                currentView.getLocalVisibleRect(r); //获取在当前窗口内的绝对坐标
-                int visibleLeft = r.left;
-                int visibleRight = r.right;
+
+                if (position == recyclerView.getAdapter().getItemCount()-1) {
+                    pageX += recyclerView.getWidth() - getPaddingLeft() - getPaddingRight() - currentView.getWidth();
+                }
+
                 int width = currentView.getWidth();
-                int inVisibleWith = width - (visibleRight - visibleLeft);
                 int positionOffsetPixels = 0;
-                if (visibleLeft > 0 ) {
-                    positionOffsetPixels = visibleLeft;
-                }
-                if (visibleRight < width) {
-                    positionOffsetPixels = visibleRight - width;
-                }
+                float startX = currentView.getX();
+                positionOffsetPixels = (int) (pageX - startX);
                 float positionOffset = (positionOffsetPixels*1f) / (width*1f);
                 int size=mOnPageChangeListeners.size();
                 if (size>0) {
-                    if (visibleLeft == 0&&visibleRight==width) {
+                    if (startX==pageX) {
                         mCurrentPosition = position;
                         for (int i = 0; i <size; i++) {
                             mOnPageChangeListeners.get(i).onPageSelected(mCurrentPosition);
@@ -271,6 +276,8 @@ public class PagerRecyclerView extends RecyclerView {
             SCROLL_STATE_DRAGGING：RecyclerView目前被外部输入如用户触摸输入。
             SCROLL_STATE_SETTLING：RecyclerView目前动画虽然不是在最后一个位置外部控制。*/
             if (!isPager)
+                return;
+            if (recyclerView.getAdapter()==null)
                 return;
             int size=mOnPageChangeListeners.size();
             if (size>0) {
@@ -334,7 +341,7 @@ public class PagerRecyclerView extends RecyclerView {
 
         }
     }
-    public static void setSuperField(Object object,String fieldName,Object value) {
+    public static void setSuperField(Object object, String fieldName, Object value) {
         try {
             Class superclass=object.getClass().getSuperclass();
             Field f=superclass.getDeclaredField(fieldName);
@@ -353,10 +360,10 @@ public class PagerRecyclerView extends RecyclerView {
      * @return 父类中的方法对象
      */
 
-    public static Method getDeclaredMethod(Object object, String methodName, Class<?> ... parameterTypes){
+    public static Method getDeclaredMethod(Object object, String methodName, Class<?>... parameterTypes){
         Method method = null ;
 
-        for(Class<?> clazz = object.getClass() ; clazz != Object.class ; clazz = clazz.getSuperclass()) {
+        for(Class<?> clazz = object.getClass(); clazz != Object.class ; clazz = clazz.getSuperclass()) {
             try {
                 method = clazz.getDeclaredMethod(methodName, parameterTypes) ;
                 return method ;
@@ -378,8 +385,8 @@ public class PagerRecyclerView extends RecyclerView {
      * @return 父类中方法的执行结果
      */
 
-    public static Object invokeMethod(Object object, String methodName, Class<?> [] parameterTypes,
-                                      Object [] parameters) {
+    public static Object invokeMethod(Object object, String methodName, Class<?>[] parameterTypes,
+                                      Object[] parameters) {
         //根据 对象、方法名和对应的方法参数 通过反射 调用上面的方法获取 Method 对象
         Method method = getDeclaredMethod(object, methodName, parameterTypes) ;
 
@@ -427,7 +434,7 @@ public class PagerRecyclerView extends RecyclerView {
 
         private int pagePosition = -1;
         private int childIndex = -1;
-        public BaseViewHolder(final View view,int childIndex) {
+        public BaseViewHolder(final View view, int childIndex) {
             this.views = new SparseArray<>();
             this.childClickViewIds = new LinkedHashSet<>();
             this.itemChildLongClickViewIds = new LinkedHashSet<>();

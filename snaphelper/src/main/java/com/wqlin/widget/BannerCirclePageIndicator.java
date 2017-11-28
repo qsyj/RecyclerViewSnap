@@ -29,26 +29,30 @@ import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewConfigurationCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+
 import com.github.rubensousa.gravitysnaphelper.R;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import static android.graphics.Paint.ANTI_ALIAS_FLAG;
 import static android.widget.LinearLayout.HORIZONTAL;
 import static android.widget.LinearLayout.VERTICAL;
 
 /**
- * Draws circles (one for each view). The current view position is filled and
+ * Draws circles (one for each view). The current view mCurrentPosition is filled and
  * others are only stroked.
  * @author wangql
  * @email wangql@leleyuntech.com
  * @date 2017/10/23 15:47
  */
-public class CirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener{
+public class BannerCirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener{
     private static final int INVALID_POINTER = -1;
 
     private float mRadius;
@@ -58,6 +62,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
     private final Paint mPaintFill = new Paint(ANTI_ALIAS_FLAG);
     private PagerRecyclerView mPagerRecyclerView;
     private int mCurrentPage;
+    private int mCurrentPosition;
     private int mSnapPage;
     private float mPageOffset;
     private int mScrollState;
@@ -72,15 +77,17 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
     private int mActivePointerId = INVALID_POINTER;
     private boolean mIsDragging;
 
-    public CirclePageIndicator(Context context) {
+    private int bannerCount = 1;
+
+    public BannerCirclePageIndicator(Context context) {
         this(context, null);
     }
 
-    public CirclePageIndicator(Context context, AttributeSet attrs) {
+    public BannerCirclePageIndicator(Context context, AttributeSet attrs) {
         this(context, attrs, R.attr.vpiCirclePageIndicatorStyle);
     }
 
-    public CirclePageIndicator(Context context, AttributeSet attrs, int defStyle) {
+    public BannerCirclePageIndicator(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         if (isInEditMode()) return;
 
@@ -182,7 +189,6 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
                         mPagerRecyclerView.endScrollBy();
                     }
                 }
-
                 break;
 
             case MotionEventCompat.ACTION_POINTER_DOWN: {
@@ -306,13 +312,8 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (mPagerRecyclerView == null) {
-            return;
-        }
         final int count;
-
-        count = mPagerRecyclerView.getAdapter().getItemCount();
-
+        count = bannerCount;
         if (count == 0 ||count==1) {
             return;
         }
@@ -395,6 +396,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
 
         float lastCx = mItemInfos.get(mItemInfos.size() - 1).cx;
         float firstCx = mItemInfos.get(0).cx;
+
         if (dX>lastCx)
             dX = lastCx;
         if (dX<firstCx)
@@ -402,31 +404,48 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         canvas.drawCircle(dX, dY, mRadius, mPaintFill);
     }
 
-
-
-
-    public void setPagerRecyclerView(PagerRecyclerView view) {
+    public void setPagerRecyclerView(PagerRecyclerView view, final int bannerCount) {
+        this.bannerCount = bannerCount;
         if (mPagerRecyclerView == view) {
             return;
         }
         if (view.getAdapter() == null) {
             throw new IllegalStateException("ViewPager does not have adapter instance.");
         }
+
         mPagerRecyclerView = view;
         mPagerRecyclerView.removeOnPageChangeListener(this);
         mPagerRecyclerView.addOnPageChangeListener(this);
+        addBanner();
+        if (mCurrentPage == 0) {
+            setCurrentItem(bannerCount);
+        }
         invalidate();
     }
 
-    public void setPagerRecyclerView(PagerRecyclerView view, int initialPosition) {
-        setPagerRecyclerView(view);
+    public void setPagerRecyclerView(PagerRecyclerView view, int initialPosition,int bannerCount) {
+        setPagerRecyclerView(view,bannerCount);
         setCurrentItem(initialPosition);
     }
 
     public void setCurrentItem(int item) {
-        mPagerRecyclerView.setCurrentItem(item);
-        mCurrentPage = item;
-        invalidate();
+        setCurrentItem(item,false);
+    }
+
+    public void setCurrentItem(int item, boolean smoothScroll) {
+        if (mPagerRecyclerView == null) {
+            throw new IllegalStateException("PagerRecyclerView has not been bound.");
+        }
+        if (item == 0) {
+            addBanner();
+            setCurrentItem(bannerCount);
+        } else {
+            addBanner(item);
+            mPagerRecyclerView.setCurrentItem(item,smoothScroll);
+            mCurrentPosition = item;
+            mCurrentPage = item%bannerCount;
+            invalidate();
+        }
     }
 
     public void notifyDataSetChanged() {
@@ -440,20 +459,61 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-        mCurrentPage = position;
+        mCurrentPage = position%bannerCount;
+        mCurrentPosition = position;
         mPageOffset = positionOffset;
         invalidate();
     }
 
     @Override
-    public void onPageSelected(int position) {
+    public void onPageSelected(final int position) {
         if (mSnap || (mScrollState == ViewPager.SCROLL_STATE_IDLE)||mPagerRecyclerView!=null) {
-            mCurrentPage = position;
-            mSnapPage = position;
+            mPagerRecyclerView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    addBanner(position);
+                    if (position==0)
+                        setCurrentItem(bannerCount);
+                }
+            }, 0);
+            mCurrentPage = position%bannerCount;
+            mCurrentPosition = position;
+            mSnapPage = position%bannerCount;
             mPageOffset = 0f;
             invalidate();
         }
 
+    }
+
+    private boolean isAddBanner(int position) {
+        if (bannerCount==0)
+            return false;
+        if (mPagerRecyclerView==null)
+            return false;
+        RecyclerView.Adapter adapter = mPagerRecyclerView.getAdapter();
+        if (adapter == null) return false;
+        if (position+1==adapter.getItemCount())
+            return true;
+        return false;
+    }
+
+    private void addBanner(int position) {
+        if (isAddBanner(position)) {
+            addBanner();
+        }
+    }
+    private void addBanner() {
+        if (bannerCount==0)
+            return;
+        if (mPagerRecyclerView==null)
+            return;
+        RecyclerView.Adapter adapter = mPagerRecyclerView.getAdapter();
+        if (adapter == null) return;
+        if (adapter instanceof BasePagerRecyclerAdapter) {
+            BasePagerRecyclerAdapter pagerRecyclerAdapter = (BasePagerRecyclerAdapter) adapter;
+            List data = pagerRecyclerAdapter.getData();
+            pagerRecyclerAdapter.addData(data);
+        }
     }
 
     /*
@@ -481,13 +541,12 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         int specMode = MeasureSpec.getMode(measureSpec);
         int specSize = MeasureSpec.getSize(measureSpec);
 
-        if ((specMode == MeasureSpec.EXACTLY) ||  mPagerRecyclerView == null) {
+        if ((specMode == MeasureSpec.EXACTLY) || mPagerRecyclerView == null) {
             //We were told how big to be
             result = specSize;
         } else {
             //Calculate the width according the views count
             final int count;
-
             count = mPagerRecyclerView.getAdapter().getItemCount();
 
             result = (int) (getPaddingLeft() + getPaddingRight()
@@ -530,6 +589,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         SavedState savedState = (SavedState) state;
         super.onRestoreInstanceState(savedState.getSuperState());
         mCurrentPage = savedState.currentPage;
+        mCurrentPosition = savedState.currentPosition;
         mSnapPage = savedState.currentPage;
         requestLayout();
     }
@@ -539,11 +599,13 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         Parcelable superState = super.onSaveInstanceState();
         SavedState savedState = new SavedState(superState);
         savedState.currentPage = mCurrentPage;
+        savedState.currentPosition = mCurrentPosition;
         return savedState;
     }
 
     static class SavedState extends BaseSavedState {
         int currentPage;
+        int currentPosition;
 
         public SavedState(Parcelable superState) {
             super(superState);
@@ -552,12 +614,14 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         private SavedState(Parcel in) {
             super(in);
             currentPage = in.readInt();
+            currentPosition = in.readInt();
         }
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
             super.writeToParcel(dest, flags);
             dest.writeInt(currentPage);
+            dest.writeInt(currentPosition);
         }
 
         @SuppressWarnings("UnusedDeclaration")
@@ -578,6 +642,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         public float cx;
         public float cy;
         public float radius;
+        public int position;
     }
 
     class DefaultOnDoubleTapListener implements GestureDetector.OnDoubleTapListener {

@@ -126,7 +126,11 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
             if (position > maxPosition) {
                 onBindNoDataChildView(viewHolder, childViewHolder, pagePosition, i);
             } else {
-                onBindChildView(viewHolder, childViewHolder, mData.get(position), position, pagePosition, i);
+                K data = null;
+                if (position < mData.size()) {
+                    data = mData.get(position);
+                }
+                onBindChildView(viewHolder, childViewHolder,data , position, pagePosition, i);
             }
         }
     }
