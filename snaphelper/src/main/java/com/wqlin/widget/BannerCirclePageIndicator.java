@@ -569,13 +569,28 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     }
 
     @Override
+    protected void onDetachedFromWindow() {
+        onDetach();
+        super.onDetachedFromWindow();
+    }
+
+    @Override
     public void onDetach() {
-        mPagerRecyclerView.removeAllOnPageChangeListener();
-        mPagerRecyclerView = null;
-        mHandler.removeMessages(WHAT_BANNER_LOOP);
-        mHandler = null;
-        mItemInfos.clear();
-        mItemInfos=null;
+        if (mPagerRecyclerView != null) {
+            mPagerRecyclerView.removeAllOnPageChangeListener();
+            mPagerRecyclerView = null;
+        }
+
+        if (mHandler != null) {
+            mHandler.removeMessages(WHAT_BANNER_LOOP);
+            mHandler = null;
+        }
+
+        if (mItemInfos != null) {
+            mItemInfos.clear();
+            mItemInfos=null;
+        }
+
         mGestureDetector = null;
     }
 

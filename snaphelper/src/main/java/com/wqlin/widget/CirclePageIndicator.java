@@ -461,11 +461,23 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
     }
 
     @Override
+    protected void onDetachedFromWindow() {
+        onDetach();
+        super.onDetachedFromWindow();
+    }
+
+    @Override
     public void onDetach() {
-        mPagerRecyclerView.removeAllOnPageChangeListener();
-        mPagerRecyclerView = null;
-        mItemInfos.clear();
-        mItemInfos=null;
+        if (mPagerRecyclerView != null) {
+            mPagerRecyclerView.removeAllOnPageChangeListener();
+            mPagerRecyclerView = null;
+        }
+
+        if (mItemInfos != null) {
+            mItemInfos.clear();
+            mItemInfos=null;
+        }
+
         mGestureDetector = null;
     }
 
