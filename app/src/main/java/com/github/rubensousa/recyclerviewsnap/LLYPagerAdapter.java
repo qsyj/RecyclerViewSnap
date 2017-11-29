@@ -1,8 +1,10 @@
 package com.github.rubensousa.recyclerviewsnap;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
 import com.wqlin.widget.BasePagerRecyclerAdapter;
 import com.wqlin.widget.PagerRecyclerView;
@@ -50,7 +52,18 @@ public class LLYPagerAdapter extends BasePagerRecyclerAdapter<PagerRecyclerActiv
         if (!isPager(recyclerView)) {
             return null;
         }
-        return super.getParentViewParams(recyclerView,parentView);
+        if (parentView == null)
+            return null;
+        WindowManager wm1 = ((Activity)recyclerView.getContext()).getWindowManager();
+        int width0 = (int) (wm1.getDefaultDisplay().getWidth()*0.8);
+        ViewGroup.LayoutParams layoutParams = parentView.getLayoutParams();
+        if (layoutParams == null) {
+            layoutParams = new ViewGroup.LayoutParams(width0, ViewGroup.LayoutParams.MATCH_PARENT);
+        } else {
+            layoutParams.width =width0;
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        }
+        return layoutParams;
     }
 
     @Override

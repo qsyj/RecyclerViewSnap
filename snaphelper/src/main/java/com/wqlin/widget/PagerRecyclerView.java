@@ -13,6 +13,8 @@ import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.LinearSnapHelper;
+import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.text.util.Linkify;
 import android.util.AttributeSet;
@@ -116,12 +118,26 @@ public class PagerRecyclerView extends RecyclerView {
     }
 
     private void setSnapHelper(boolean flingMorePage) {
+        setSnapHelper(flingMorePage,Gravity.CENTER);
+    }
+
+    private void setSnapHelper(boolean flingMorePage,int gravity) {
         if (!isPager)
             return;
         if (flingMorePage) {
-            new GravitySnapHelper(Gravity.START).attachToRecyclerView(this);
+            if (gravity != Gravity.START && gravity != Gravity.END
+                    && gravity != Gravity.BOTTOM && gravity != Gravity.TOP) {
+                new LinearSnapHelper().attachToRecyclerView(this);
+            } else {
+                new GravitySnapHelper(gravity).attachToRecyclerView(this);
+            }
         } else {
-            new GravityPagerSnapHelper(Gravity.START).attachToRecyclerView(this);
+            if (gravity != Gravity.START && gravity != Gravity.END
+                    && gravity != Gravity.BOTTOM && gravity != Gravity.TOP) {
+                new PagerSnapHelper().attachToRecyclerView(this);
+            } else {
+                new GravityPagerSnapHelper(gravity).attachToRecyclerView(this);
+            }
         }
     }
     private void destroyCallbacks() {
@@ -133,16 +149,21 @@ public class PagerRecyclerView extends RecyclerView {
             return;
         setCurrentItem(item, false);
     }
-    public void setCurrentItem(int item, boolean smoothScroll) {
+    public void setCurrentItem(final int item, boolean smoothScroll) {
         if (!isPager)
             return;
         LayoutManager layoutManager = getLayoutManager();
         if (layoutManager instanceof LinearLayoutManager) {
-            LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+            final LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
             if (smoothScroll) {
                 linearLayoutManager.smoothScrollToPosition(PagerRecyclerView.this,null,item);
             } else {
-                linearLayoutManager.scrollToPositionWithOffset(item, 0);
+                postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        linearLayoutManager.scrollToPositionWithOffset(item,getPageX(item,null));
+                    }
+                }, 0);
             }
         }
     }
@@ -203,7 +224,7 @@ public class PagerRecyclerView extends RecyclerView {
         if (!isPager)
             return;
         if (flingMorePage != isFlingMorePage) {
-            setSnapHelper(flingMorePage);
+            setSnapHelper(flingMorePage,Gravity.CENTER);
         }
         isFlingMorePage = flingMorePage;
     }
@@ -237,6 +258,30 @@ public class PagerRecyclerView extends RecyclerView {
             Log.e(TAG, str);
         }
     }
+
+    private int getPageX(int position,View currentView) {
+        int pageX ;
+        Adapter adapter = getAdapter();
+        if ( adapter== null) {
+            return 0;
+        }
+        int count = getChildCount();
+        if ( count == 0) {
+            return 0;
+        }
+
+        if (currentView==null)
+            currentView = getChildAt(0);
+        if (position == 0) {
+            pageX = 0;
+        } else if (position == getAdapter().getItemCount() - 1) {
+            pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+        } else {
+            pageX = (getWidth()-currentView.getWidth())/2;
+        }
+        return pageX;
+    }
+
     class PagerOnScrollListener extends OnScrollListener {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -244,7 +289,7 @@ public class PagerRecyclerView extends RecyclerView {
                 return;
             if (recyclerView.getAdapter()==null)
                 return;
-            int pageX = recyclerView.getPaddingLeft();
+
             LayoutManager layoutManager = recyclerView.getLayoutManager();
             if (layoutManager instanceof LinearLayoutManager) {
                 LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
@@ -267,9 +312,7 @@ public class PagerRecyclerView extends RecyclerView {
                     }
                 }
 
-                if (position == recyclerView.getAdapter().getItemCount()-1) {
-                    pageX += recyclerView.getWidth() - getPaddingLeft() - getPaddingRight() - currentView.getWidth();
-                }
+                int pageX=getPageX(position,currentView) ;
 
                 int width = currentView.getWidth();
                 int positionOffsetPixels = 0;
