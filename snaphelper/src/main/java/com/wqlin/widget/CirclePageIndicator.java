@@ -44,11 +44,17 @@ import static android.widget.LinearLayout.VERTICAL;
 /**
  * Draws circles (one for each view). The current view position is filled and
  * others are only stroked.
+ * <p>
+ *    属性设置见 attrs.xml中的CirclePageIndicator
+ *  <p>
+ *   {@link #setPagerRecyclerView(PagerRecyclerView ,int)} {@link #setPagerRecyclerView(PagerRecyclerView )}-->配置；
+ *   <p>
+ *   {@link #setCurrentItem(int)}  {@link #setCurrentItem(int, boolean)} -->设置当前选中的item,是否慢速滑动;
  * @author wangql
  * @email wangql@leleyuntech.com
  * @date 2017/10/23 15:47
  */
-public class CirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener{
+public class CirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener ,PagerRecyclerView.OnDetachListener{
     private static final int INVALID_POINTER = -1;
 
     private float mRadius;
@@ -136,7 +142,8 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        mGestureDetector.onTouchEvent(ev);
+        if (mGestureDetector!=null)
+            mGestureDetector.onTouchEvent(ev);
         if (super.onTouchEvent(ev)) {
             return true;
         }
@@ -402,9 +409,6 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         canvas.drawCircle(dX, dY, mRadius, mPaintFill);
     }
 
-
-
-
     public void setPagerRecyclerView(PagerRecyclerView view) {
         if (mPagerRecyclerView == view) {
             return;
@@ -415,6 +419,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         mPagerRecyclerView = view;
         mPagerRecyclerView.removeOnPageChangeListener(this);
         mPagerRecyclerView.addOnPageChangeListener(this);
+        mPagerRecyclerView.addOnDetachListener(this);
         invalidate();
     }
 
@@ -423,8 +428,25 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         setCurrentItem(initialPosition);
     }
 
+    /**
+     * @param item 设置当前选中的item
+     */
     public void setCurrentItem(int item) {
         mPagerRecyclerView.setCurrentItem(item);
+        mCurrentPage = item;
+        invalidate();
+    }
+
+    /**
+     *
+     * @param item 设置当前选中的item
+     * @param smoothScroll 是否慢速滑动
+     */
+    public void setCurrentItem(int item, boolean smoothScroll) {
+        if (mPagerRecyclerView == null) {
+            throw new IllegalStateException("PagerRecyclerView has not been bound.");
+        }
+        mPagerRecyclerView.setCurrentItem(item,smoothScroll);
         mCurrentPage = item;
         invalidate();
     }
@@ -436,6 +458,15 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
     @Override
     public void onPageScrollStateChanged(int state) {
         mScrollState = state;
+    }
+
+    @Override
+    public void onDetach() {
+        mPagerRecyclerView.removeAllOnPageChangeListener();
+        mPagerRecyclerView = null;
+        mItemInfos.clear();
+        mItemInfos=null;
+        mGestureDetector = null;
     }
 
     @Override

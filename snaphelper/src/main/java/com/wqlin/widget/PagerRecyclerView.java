@@ -64,6 +64,7 @@ public class PagerRecyclerView extends RecyclerView {
     private boolean isFlingMorePage = false;
     private PagerOnScrollListener mPagerOnScrollListener;
     private List<OnPageChangeListener> mOnPageChangeListeners = new ArrayList<>();
+    private List<OnDetachListener> mOnDetachListeners = new ArrayList<>();
 
     public PagerRecyclerView(Context context) {
         this(context, null);
@@ -86,7 +87,7 @@ public class PagerRecyclerView extends RecyclerView {
         setSnapHelper(isFlingMorePage);
         mPagerOnScrollListener = new PagerOnScrollListener();
         addOnScrollListener(mPagerOnScrollListener);
-        addOnPageChangeListener(new OnPageChangeListener() {
+        /*addOnPageChangeListener(new OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
                 log("onPageScrolled() "+"position:"+position+",positionOffset:"+positionOffset+",positionOffsetPixels:"+positionOffsetPixels);
@@ -101,7 +102,12 @@ public class PagerRecyclerView extends RecyclerView {
             public void onPageScrollStateChanged(int state) {
                 log("onPageScrollStateChanged() "+"state:"+state);
             }
-        });
+
+            @Override
+            public void onDetachedFromRecyclerView() {
+                log("onPageScrollStateChanged() "+"onDetachedFromRecyclerView()");
+            }
+        });*/
     }
 
     @Override
@@ -145,6 +151,24 @@ public class PagerRecyclerView extends RecyclerView {
             mOnPageChangeListeners = new ArrayList<>();
         }
         mOnPageChangeListeners.add(listener);
+    }
+
+    public void addOnDetachListener(OnDetachListener listener) {
+        if (mOnDetachListeners == null) {
+            mOnDetachListeners = new ArrayList<>();
+        }
+        mOnDetachListeners.add(listener);
+    }
+
+    public void removeAllOnPageChangeListener() {
+        if (mOnPageChangeListeners != null) {
+            for (OnPageChangeListener listener :
+                    mOnPageChangeListeners) {
+                if (listener != mPagerOnScrollListener)
+                    mOnPageChangeListeners.remove(listener);
+            }
+
+        }
     }
 
     public void removeOnPageChangeListener(OnPageChangeListener listener) {
@@ -409,6 +433,22 @@ public class PagerRecyclerView extends RecyclerView {
 
         return null;
     }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mOnDetachListeners != null) {
+            for (OnDetachListener listener :
+                    mOnDetachListeners) {
+                listener.onDetach();
+            }
+        }
+        if (mOnPageChangeListeners!=null)
+            mOnPageChangeListeners.clear();
+        if (mOnDetachListeners!=null)
+            mOnDetachListeners.clear();
+        super.onDetachedFromWindow();
+    }
+
     public interface OnPageChangeListener {
 
         void onPageScrolled(int position, float positionOffset, int positionOffsetPixels);
@@ -416,7 +456,14 @@ public class PagerRecyclerView extends RecyclerView {
         void onPageSelected(int position);
 
         void onPageScrollStateChanged(int state);
+
+
     }
+
+    public interface OnDetachListener{
+        void onDetach();
+    }
+
     public static class BaseViewHolder{
         /**
          * Views indexed with their IDs

@@ -23,6 +23,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.IntRange;
@@ -49,11 +51,25 @@ import static android.widget.LinearLayout.VERTICAL;
 /**
  * Draws circles (one for each view). The current view mCurrentPosition is filled and
  * others are only stroked.
+ *  <p>
+ *    属性设置见 attrs.xml中的CirclePageIndicator
+ *  <p>
+ *   {@link #setPagerRecyclerView(PagerRecyclerView,int)} {@link #setPagerRecyclerView(PagerRecyclerView,int,int)}-->配置，默认启用{@link #startLoop()}；
+ *   <p>
+ *   {@link #setCurrentItem(int)}  {@link #setCurrentItem(int, boolean)} -->设置当前选中的item,是否慢速滑动;
+ * <p>
+ *  {@link #startLoop()}-->开始循环；
+ *  <p>
+ *   {@link #stopLoop()}-->停止循环；
+ *   <p>
+ *   {@link #suspendLoop()}-->中断循环（并不会停止，在如果在循环，则中断）；
+ *   <p>
+ *   {@link #setBannerLoopDuration(long)}-->循环时间；
  * @author wangql
  * @email wangql@leleyuntech.com
  * @date 2017/10/23 15:47
  */
-public class BannerCirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener{
+public class BannerCirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener,PagerRecyclerView.OnDetachListener{
     private static final int INVALID_POINTER = -1;
 
     private float mRadius;
@@ -77,6 +93,11 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     private float mLastMotionX = -1;
     private int mActivePointerId = INVALID_POINTER;
     private boolean mIsDragging;
+
+    private Handler mHandler;
+    private boolean isLoopStop;
+    private final int WHAT_BANNER_LOOP = 1;
+    private long bannerLoopDuration = 3000;
 
     private int bannerCount = 1;
 
@@ -144,7 +165,8 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        mGestureDetector.onTouchEvent(ev);
+        if (mGestureDetector!=null)
+            mGestureDetector.onTouchEvent(ev);
         if (super.onTouchEvent(ev)) {
             return true;
         }
@@ -417,11 +439,13 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         mPagerRecyclerView = view;
         mPagerRecyclerView.removeOnPageChangeListener(this);
         mPagerRecyclerView.addOnPageChangeListener(this);
+        mPagerRecyclerView.addOnDetachListener(this);
         addBanner();
         if (isSupportLoop()&&mCurrentPage == 0) {
             setCurrentItem(bannerCount);
         }
         invalidate();
+        startLoop();
     }
 
     private boolean isSupportLoop() {
@@ -429,15 +453,94 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
             return false;
         return true;
     }
+
+    /**
+     * 开始循环
+     */
+    public void startLoop() {
+        startLoop(bannerLoopDuration);
+    }
+
+    /**
+     * 循环时间
+     * @param bannerLoopDuration
+     */
+    public void setBannerLoopDuration(long bannerLoopDuration) {
+        this.bannerLoopDuration = bannerLoopDuration;
+    }
+
+    /**
+     * 开始循环
+     */
+    public void startLoop(long duration) {
+        if (mHandler==null) {
+            mHandler = new Handler(new Handler.Callback() {
+                @Override
+                public boolean handleMessage(Message msg) {
+                    int what = msg.what;
+                    switch (what) {
+                        case WHAT_BANNER_LOOP:
+                            setCurrentItem(mCurrentPosition+1,true);
+                            return true;
+                    }
+                    return false;
+                }
+            });
+        }
+        if (!isSupportLoop())
+            return;
+        isLoopStop = false;
+        setBannerLoopDuration(duration);
+        nextBanner();
+    }
+
+    /**
+     * 跳到下一个banner
+     */
+    private void nextBanner() {
+        if (mHandler==null)
+            return;
+        if (!isSupportLoop())
+            return;
+        if (isLoopStop)
+            return;
+        mHandler.sendEmptyMessageDelayed(WHAT_BANNER_LOOP,bannerLoopDuration);
+    }
+
+    /**
+     * 停止循环
+     */
+    public void stopLoop() {
+        suspendLoop();
+        isLoopStop = true;
+
+    }
+    /**
+     * 中断循环（并不会停止，在如果在循环，则中断）
+     */
+    public void suspendLoop() {
+        if (mHandler != null) {
+            mHandler.removeMessages(WHAT_BANNER_LOOP);
+        }
+    }
+
     public void setPagerRecyclerView(PagerRecyclerView view, int initialPosition,@IntRange(from = 1) int bannerCount) {
         setPagerRecyclerView(view,bannerCount);
         setCurrentItem(initialPosition);
     }
 
+    /**
+     * @param item 设置当前选中的item
+     */
     public void setCurrentItem(int item) {
         setCurrentItem(item,false);
     }
 
+    /**
+     *
+     * @param item 设置当前选中的item
+     * @param smoothScroll 是否慢速滑动
+     */
     public void setCurrentItem(int item, boolean smoothScroll) {
         if (mPagerRecyclerView == null) {
             throw new IllegalStateException("PagerRecyclerView has not been bound.");
@@ -466,7 +569,19 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     }
 
     @Override
+    public void onDetach() {
+        mPagerRecyclerView.removeAllOnPageChangeListener();
+        mPagerRecyclerView = null;
+        mHandler.removeMessages(WHAT_BANNER_LOOP);
+        mHandler = null;
+        mItemInfos.clear();
+        mItemInfos=null;
+        mGestureDetector = null;
+    }
+
+    @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+        suspendLoop();
         mCurrentPage = position%bannerCount;
         mCurrentPosition = position;
         mPageOffset = positionOffset;
@@ -476,6 +591,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     @Override
     public void onPageSelected(final int position) {
         if (mSnap || (mScrollState == ViewPager.SCROLL_STATE_IDLE)||mPagerRecyclerView!=null) {
+            nextBanner();
             mPagerRecyclerView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
