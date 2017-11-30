@@ -1,5 +1,6 @@
 package com.github.rubensousa.recyclerviewsnap;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -11,6 +12,7 @@ import com.github.magiepooh.recycleritemdecoration.ItemDecorations;
 import com.wqlin.widget.BannerCirclePageIndicator;
 import com.wqlin.widget.BasePagerRecyclerAdapter;
 import com.wqlin.widget.CirclePageIndicator;
+import com.wqlin.widget.PageItemDecoration;
 import com.wqlin.widget.PagerRecyclerView;
 
 import java.util.ArrayList;
@@ -76,7 +78,24 @@ public class PagerRecyclerActivity extends AppCompatActivity {
                 .type(0,R.drawable.divider_hor_1dp_f6)
                 .last(R.drawable.divider_hor_1dp_f6)
                 .create();
+        PageItemDecoration pageItemDecoration=new PageItemDecoration() {
+            Drawable mDrawable = null;
+            @Override
+            public Drawable getLeftDrawable(int position, RecyclerView recyclerView) {
+                if (mDrawable == null) {
+                    mDrawable = getResources().getDrawable(R.drawable.divider_hor_1dp_f6);
+                }
+                return mDrawable;
+            }
 
+            @Override
+            public Drawable getRightDrawable(int position, RecyclerView recyclerView) {
+                if (mDrawable == null) {
+                    mDrawable = getResources().getDrawable(R.drawable.divider_hor_1dp_f6);
+                }
+                return mDrawable;
+            }
+        };
         mRunnable = new MyRunnable();
         final Timer timer =new Timer();
         timer.schedule(new TimerTask() {
@@ -96,7 +115,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
                 mPagerRecyclerView.setFlingMorePage(!mPagerRecyclerView.isFlingMorePage());
             }
         }, 5000);*/
-        mPagerRecyclerView.addItemDecoration(decoration);
+        mPagerRecyclerView.addItemDecoration(pageItemDecoration);//decoration
     }
     class MyRunnable implements Runnable{
 

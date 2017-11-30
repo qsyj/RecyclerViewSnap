@@ -53,7 +53,10 @@ import java.util.Set;
  *  属性设置见 attrs.xml中的PagerRecyclerView ,item_gravity 默认START
  * </p>
  * <p>
- *  item 充满时可以设置ItemDecoration；不充满时分割线最好item view中设置，不要设置ItemDecoration;
+ *   **************
+ *  <p>
+ *  isPager时ItemDecoration必须使用PageItemDecoration;其实左对齐时 右对齐 中间对齐是把ItemView的左右间隔算成了ItemView的宽度，所以设置左对齐时，
+ *  不想左边有间隔请请把ItemView的左间隔设置成0，右对齐时，不想右边有间隔请请把ItemView的右间隔设置成0，中间对齐时，想要居中请请把ItemView的左右间隔设置成相等；
  * </p>
  * Adapter必须使用{@link BasePagerRecyclerAdapter}  <p>
  * {@link #isFlingMorePage} 快速滑动是否翻动多页 <p>
@@ -80,6 +83,8 @@ public class PagerRecyclerView extends RecyclerView {
     private boolean isFlingMorePage = false;
     private int gravity = CENTER;
     private int snapGravity = Gravity.CENTER;
+
+    private PageItemDecoration mPageItemDecoration;
     private PagerOnScrollListener mPagerOnScrollListener;
     private List<OnPageChangeListener> mOnPageChangeListeners = new ArrayList<>();
     private List<OnDetachListener> mOnDetachListeners = new ArrayList<>();
@@ -204,7 +209,7 @@ public class PagerRecyclerView extends RecyclerView {
                 postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        linearLayoutManager.scrollToPositionWithOffset(item,getPageX(item,null));
+                        linearLayoutManager.scrollToPositionWithOffset(item,getPageX(item,null,false));
                     }
                 }, 0);
             }
@@ -302,9 +307,19 @@ public class PagerRecyclerView extends RecyclerView {
             Log.e(TAG, str);
         }
     }
-
     private int getPageX(int position,View currentView) {
-        int pageX =getPaddingLeft();;
+        return getPageX(position, currentView, true);
+    }
+
+    /**
+     *
+     * @param position
+     * @param currentView
+     * @param isCalculationDecoration 是否计算Decoration 当使用linearLayoutManager.scrollToPositionWithOffset()时就不要计算
+     * @return
+     */
+    private int getPageX(int position,View currentView,boolean isCalculationDecoration) {
+        int pageX =getPaddingLeft();
         Adapter adapter = getAdapter();
         if ( adapter== null) {
             return 0;
@@ -316,38 +331,75 @@ public class PagerRecyclerView extends RecyclerView {
 
         if (currentView==null)
             currentView = getChildAt(0);
+        int deLeft = getDecorationLeft(position);
+        int deRight = getDecorationRight(position);
+        int childWidth = currentView.getWidth();
+        int width = getWidth();
+        int paddingLeft = getPaddingLeft();
+        int paddingRight = getPaddingRight();
         switch (gravity) {
             case START:
-                if (position == 0) {
-                    pageX = getPaddingLeft();
-                } else if (position == getAdapter().getItemCount() - 1) {
-                    pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+                if (position == getAdapter().getItemCount() - 1) {
+                    pageX = width - paddingRight - childWidth -deRight;
                 } else {
-                    pageX = getPaddingLeft();
+                    pageX = paddingLeft+deLeft;
                 }
                 break;
             case END:
                 if (position == 0) {
-                    pageX = getPaddingLeft();
+                    pageX = paddingLeft+deLeft;
                 } else{
-                    pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+                    pageX = width - paddingRight - childWidth -deRight;
                 }
                 break;
             case CENTER:
                 if (position == 0) {
-                    pageX = getPaddingLeft();
+                    pageX = paddingLeft+deLeft;
                 } else if (position == getAdapter().getItemCount() - 1) {
-                    pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+                    pageX = width - paddingRight - childWidth-deRight;
                 } else {
-                    pageX = (getWidth()-currentView.getWidth())/2;
+                    pageX = ((width-childWidth-deLeft-deRight)/2)+deLeft;
                 }
                 break;
 
         }
-
+        if (!isCalculationDecoration) {
+            pageX -= deLeft;
+        }
         return pageX;
     }
 
+    private int getAllWidth(View view,int position) {
+        int deLeft = getDecorationLeft(position);
+        int deRight = getDecorationRight(position);
+        return view.getWidth() + deLeft + deRight;
+    }
+    private int getDecorationLeft(int position) {
+        if (mPageItemDecoration==null) return 0;
+
+        return mPageItemDecoration.getLeftWidth(position,this);
+    }
+
+    private int getDecorationRight(int position) {
+        if (mPageItemDecoration==null) return 0;
+
+        return mPageItemDecoration.getRightWidth(position,this);
+    }
+
+    public void addItemDecoration(ItemDecoration decor, int index) {
+        if (decor==null) return;
+        if (isPager) {
+            if (decor instanceof PageItemDecoration) {
+                if (mPageItemDecoration != null) {
+                    removeItemDecoration(mPageItemDecoration);
+                }
+                mPageItemDecoration = (PageItemDecoration) decor;
+            } else {
+                throw new ClassCastException("PagerRecyclerView is isPager,decor is not PageItemDecoration");
+            }
+        }
+        super.addItemDecoration(decor,index);
+    }
     class PagerOnScrollListener extends OnScrollListener {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -555,6 +607,8 @@ public class PagerRecyclerView extends RecyclerView {
             mOnPageChangeListeners.clear();
         if (mOnDetachListeners!=null)
             mOnDetachListeners.clear();
+
+        mPageItemDecoration = null;
         super.onDetachedFromWindow();
     }
 

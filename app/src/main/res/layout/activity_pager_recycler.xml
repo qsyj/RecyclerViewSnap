@@ -9,7 +9,7 @@
         android:id="@+id/pagerRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:item_gravity="start"/>
+        app:item_gravity="center"/>
     <com.wqlin.widget.BannerCirclePageIndicator
         android:id="@+id/page_indicator"
         android:layout_centerHorizontal="true"
