@@ -4,7 +4,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 
+import com.github.magiepooh.recycleritemdecoration.HorizontalItemDecoration;
+import com.github.magiepooh.recycleritemdecoration.ItemDecorations;
 import com.wqlin.widget.BannerCirclePageIndicator;
 import com.wqlin.widget.BasePagerRecyclerAdapter;
 import com.wqlin.widget.CirclePageIndicator;
@@ -68,6 +71,12 @@ public class PagerRecyclerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pager_recycler);
         mPagerRecyclerView = (PagerRecyclerView) findViewById(R.id.pagerRecyclerView);
+        RecyclerView.ItemDecoration decoration = ItemDecorations.horizontal(this)
+                .first(R.drawable.divider_hor_1dp_f6)
+                .type(0,R.drawable.divider_hor_1dp_f6)
+                .last(R.drawable.divider_hor_1dp_f6)
+                .create();
+
         mRunnable = new MyRunnable();
         final Timer timer =new Timer();
         timer.schedule(new TimerTask() {
@@ -87,7 +96,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
                 mPagerRecyclerView.setFlingMorePage(!mPagerRecyclerView.isFlingMorePage());
             }
         }, 5000);*/
-
+        mPagerRecyclerView.addItemDecoration(decoration);
     }
     class MyRunnable implements Runnable{
 

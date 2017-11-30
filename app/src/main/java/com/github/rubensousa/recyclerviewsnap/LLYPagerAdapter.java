@@ -55,7 +55,7 @@ public class LLYPagerAdapter extends BasePagerRecyclerAdapter<PagerRecyclerActiv
         if (parentView == null)
             return null;
         WindowManager wm1 = ((Activity)recyclerView.getContext()).getWindowManager();
-        int width0 = (int) (wm1.getDefaultDisplay().getWidth()*0.8);
+        int width0 = (int) (wm1.getDefaultDisplay().getWidth()*1);
         ViewGroup.LayoutParams layoutParams = parentView.getLayoutParams();
         if (layoutParams == null) {
             layoutParams = new ViewGroup.LayoutParams(width0, ViewGroup.LayoutParams.MATCH_PARENT);

@@ -50,7 +50,10 @@ import java.util.Set;
  * Created by wqlin on 2017/10/23. <p>
  * 实现ViewPager的效果 </p>
  * <p>
- *  属性设置见 attrs.xml中的PagerRecyclerView ,item_gravity
+ *  属性设置见 attrs.xml中的PagerRecyclerView ,item_gravity 默认START
+ * </p>
+ * <p>
+ *  item 充满时可以设置ItemDecoration；不充满时分割线最好item view中设置，不要设置ItemDecoration;
  * </p>
  * Adapter必须使用{@link BasePagerRecyclerAdapter}  <p>
  * {@link #isFlingMorePage} 快速滑动是否翻动多页 <p>
@@ -98,7 +101,7 @@ public class PagerRecyclerView extends RecyclerView {
     private void initAttrs(Context context,AttributeSet attrs, int defStyle) {
         if (attrs != null) {
             TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.PagerRecyclerView, defStyle, 0);
-            setGravity(a.getInt(R.styleable.PagerRecyclerView_item_gravity, CENTER));
+            setGravity(a.getInt(R.styleable.PagerRecyclerView_item_gravity, START));
         }
     }
 
