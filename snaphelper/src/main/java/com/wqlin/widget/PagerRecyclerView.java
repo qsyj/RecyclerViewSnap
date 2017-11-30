@@ -1,6 +1,7 @@
 package com.wqlin.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -10,6 +11,7 @@ import android.os.Build;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.IdRes;
+import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.v7.widget.LinearLayoutManager;
@@ -31,6 +33,7 @@ import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import com.github.rubensousa.gravitysnaphelper.R;
 import com.wqlin.snap.GravityPagerSnapHelper;
 import com.wqlin.snap.GravitySnapHelper;
 
@@ -46,6 +49,9 @@ import java.util.Set;
 /**
  * Created by wqlin on 2017/10/23. <p>
  * 实现ViewPager的效果 </p>
+ * <p>
+ *  属性设置见 attrs.xml中的PagerRecyclerView ,item_gravity
+ * </p>
  * Adapter必须使用{@link BasePagerRecyclerAdapter}  <p>
  * {@link #isFlingMorePage} 快速滑动是否翻动多页 <p>
  * {@link #isPager} 是否需要设置成ViewPager效果  不是则为正常RecyclerView   false时会清除所有滑动监听
@@ -53,6 +59,11 @@ import java.util.Set;
 
 public class PagerRecyclerView extends RecyclerView {
     private final String TAG = PagerRecyclerView.class.getSimpleName();
+
+    public final static int CENTER = 0;
+    public final static int START = 1;
+    public final static int END = 2;
+
     private boolean isLog = false;
     private int mCurrentPosition = -1;
     /**
@@ -64,6 +75,8 @@ public class PagerRecyclerView extends RecyclerView {
      * 快速滑动是否翻动多页
      */
     private boolean isFlingMorePage = false;
+    private int gravity = CENTER;
+    private int snapGravity = Gravity.CENTER;
     private PagerOnScrollListener mPagerOnScrollListener;
     private List<OnPageChangeListener> mOnPageChangeListeners = new ArrayList<>();
     private List<OnDetachListener> mOnDetachListeners = new ArrayList<>();
@@ -78,7 +91,37 @@ public class PagerRecyclerView extends RecyclerView {
 
     public PagerRecyclerView(Context context, @Nullable AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        initAttrs(context,attrs,defStyle);
         init();
+    }
+
+    private void initAttrs(Context context,AttributeSet attrs, int defStyle) {
+        if (attrs != null) {
+            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.PagerRecyclerView, defStyle, 0);
+            setGravity(a.getInt(R.styleable.PagerRecyclerView_item_gravity, CENTER));
+        }
+    }
+
+    private void setGravity(@IntRange(from = 0,to = 2) int gravity) {
+        this.gravity = gravity;
+        snapGravity = getSnapGravity(gravity);
+    }
+
+    private int getSnapGravity(int gravity) {
+        int snapGravity = Gravity.CENTER;
+
+        switch (gravity) {
+            case START:
+                snapGravity = Gravity.START;
+                break;
+            case CENTER:
+                snapGravity = Gravity.CENTER;
+                break;
+            case END:
+                snapGravity = Gravity.END;
+                break;
+        }
+        return snapGravity;
     }
 
     private void init() {
@@ -86,7 +129,8 @@ public class PagerRecyclerView extends RecyclerView {
             return;
 
         setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        setSnapHelper(isFlingMorePage);
+
+        setSnapHelper(isFlingMorePage,snapGravity);
         mPagerOnScrollListener = new PagerOnScrollListener();
         addOnScrollListener(mPagerOnScrollListener);
         /*addOnPageChangeListener(new OnPageChangeListener() {
@@ -117,26 +161,22 @@ public class PagerRecyclerView extends RecyclerView {
         super.setLayoutManager(layout);
     }
 
-    private void setSnapHelper(boolean flingMorePage) {
-        setSnapHelper(flingMorePage,Gravity.CENTER);
-    }
-
-    private void setSnapHelper(boolean flingMorePage,int gravity) {
+    private void setSnapHelper(boolean flingMorePage,int snapGravity) {
         if (!isPager)
             return;
         if (flingMorePage) {
-            if (gravity != Gravity.START && gravity != Gravity.END
-                    && gravity != Gravity.BOTTOM && gravity != Gravity.TOP) {
+            if (snapGravity != Gravity.START && snapGravity != Gravity.END
+                    && snapGravity != Gravity.BOTTOM && snapGravity != Gravity.TOP) {
                 new LinearSnapHelper().attachToRecyclerView(this);
             } else {
-                new GravitySnapHelper(gravity).attachToRecyclerView(this);
+                new GravitySnapHelper(snapGravity).attachToRecyclerView(this);
             }
         } else {
-            if (gravity != Gravity.START && gravity != Gravity.END
-                    && gravity != Gravity.BOTTOM && gravity != Gravity.TOP) {
+            if (snapGravity != Gravity.START && snapGravity != Gravity.END
+                    && snapGravity != Gravity.BOTTOM && snapGravity != Gravity.TOP) {
                 new PagerSnapHelper().attachToRecyclerView(this);
             } else {
-                new GravityPagerSnapHelper(gravity).attachToRecyclerView(this);
+                new GravityPagerSnapHelper(snapGravity).attachToRecyclerView(this);
             }
         }
     }
@@ -217,6 +257,7 @@ public class PagerRecyclerView extends RecyclerView {
     public boolean isFlingMorePage() {
         return isFlingMorePage;
     }
+
     /**
      * 快速滑动是否翻动多页
      */
@@ -224,7 +265,7 @@ public class PagerRecyclerView extends RecyclerView {
         if (!isPager)
             return;
         if (flingMorePage != isFlingMorePage) {
-            setSnapHelper(flingMorePage,Gravity.CENTER);
+            setSnapHelper(flingMorePage,snapGravity);
         }
         isFlingMorePage = flingMorePage;
     }
@@ -260,7 +301,7 @@ public class PagerRecyclerView extends RecyclerView {
     }
 
     private int getPageX(int position,View currentView) {
-        int pageX ;
+        int pageX =getPaddingLeft();;
         Adapter adapter = getAdapter();
         if ( adapter== null) {
             return 0;
@@ -272,13 +313,35 @@ public class PagerRecyclerView extends RecyclerView {
 
         if (currentView==null)
             currentView = getChildAt(0);
-        if (position == 0) {
-            pageX = 0;
-        } else if (position == getAdapter().getItemCount() - 1) {
-            pageX = getWidth() - getPaddingRight() - currentView.getWidth();
-        } else {
-            pageX = (getWidth()-currentView.getWidth())/2;
+        switch (gravity) {
+            case START:
+                if (position == 0) {
+                    pageX = getPaddingLeft();
+                } else if (position == getAdapter().getItemCount() - 1) {
+                    pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+                } else {
+                    pageX = getPaddingLeft();
+                }
+                break;
+            case END:
+                if (position == 0) {
+                    pageX = getPaddingLeft();
+                } else{
+                    pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+                }
+                break;
+            case CENTER:
+                if (position == 0) {
+                    pageX = getPaddingLeft();
+                } else if (position == getAdapter().getItemCount() - 1) {
+                    pageX = getWidth() - getPaddingRight() - currentView.getWidth();
+                } else {
+                    pageX = (getWidth()-currentView.getWidth())/2;
+                }
+                break;
+
         }
+
         return pageX;
     }
 
