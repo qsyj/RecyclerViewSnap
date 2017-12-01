@@ -34,6 +34,7 @@ import android.support.v4.view.ViewConfigurationCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -598,6 +599,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
         suspendLoop();
         mCurrentPage = position%bannerCount;
+//        Log.e("onPageScrolled()", "position:" + position + ",mCurrentPage:" + mCurrentPage+",positionOffset:"+positionOffset+",positionOffsetPixels:"+positionOffsetPixels);
         mCurrentPosition = position;
         mPageOffset = positionOffset;
         invalidate();

@@ -422,12 +422,17 @@ public class PagerRecyclerView extends RecyclerView {
                     childView.getLocalVisibleRect(r); //获取在当前窗口内的绝对坐标
                     /*int visibleLeft = r.left;
                     int visibleRight = r.right;*/
-                    int vWidth = r.right - r.left;
-                    if (vWidth > vWidth0) {
-                        vWidth0 = vWidth;
-                        position = linearLayoutManager.getPosition(childView);
-                        currentView = getChildAt(i);
+                    if (r.left >= 0) {
+                        int vWidth = r.right - r.left;
+//                        int tPosition = linearLayoutManager.getPosition(childView);
+//                        Log.e("onPageScrolled() recyclerview", "position:" + tPosition + ",vWidth:" + vWidth+",r.right:"+r.right+",r.left:"+r.left);
+                        if (vWidth > vWidth0) {
+                            vWidth0 = vWidth;
+                            position = linearLayoutManager.getPosition(childView);
+                            currentView = getChildAt(i);
+                        }
                     }
+
                 }
 
                 int pageX=getPageX(position,currentView) ;
