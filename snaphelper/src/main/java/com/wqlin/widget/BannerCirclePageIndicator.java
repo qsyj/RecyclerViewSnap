@@ -34,7 +34,6 @@ import android.support.v4.view.ViewConfigurationCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -70,7 +69,7 @@ import static android.widget.LinearLayout.VERTICAL;
  * @email wangql@leleyuntech.com
  * @date 2017/10/23 15:47
  */
-public class BannerCirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener,PagerRecyclerView.OnDetachListener{
+public class BannerCirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener,PagerRecyclerView.OnDestroyListener {
     private static final int INVALID_POINTER = -1;
 
     private float mRadius;
@@ -364,7 +363,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         }
 
         final float threeRadius = mRadius * 2+mSpace;
-        final float shortOffset = shortPaddingBefore + mRadius;
+        final float shortOffset = shortPaddingBefore + mRadius+mPaintStroke.getStrokeWidth();
         float longOffset = longPaddingBefore + mRadius;
         if (mCentered) {
             longOffset += ((longSize - longPaddingBefore - longPaddingAfter) / 2.0f) - ((count * threeRadius-mSpace) / 2.0f);
@@ -377,6 +376,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
         if (mPaintStroke.getStrokeWidth() > 0) {
             pageFillRadius -= mPaintStroke.getStrokeWidth() / 2.0f;
         }
+        if (mItemInfos==null) return;
         mItemInfos.clear();
         //Draw stroked circles
         for (int iLoop = 0; iLoop < count; iLoop++) {
@@ -570,13 +570,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
     }
 
     @Override
-    protected void onDetachedFromWindow() {
-        onDetach();
-        super.onDetachedFromWindow();
-    }
-
-    @Override
-    public void onDetach() {
+    public void onDestroy() {
         if (mPagerRecyclerView != null) {
             mPagerRecyclerView.removeAllOnPageChangeListener();
             mPagerRecyclerView = null;
@@ -716,7 +710,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
             result = specSize;
         } else {
             //Measure the height
-            result = (int) (2 * mRadius + getPaddingTop() + getPaddingBottom() + 1);
+            result = (int) (2 * mRadius + getPaddingTop() + getPaddingBottom() + 2*mPaintStroke.getStrokeWidth());
             //Respect AT_MOST value if that was what is called for by measureSpec
             if (specMode == MeasureSpec.AT_MOST) {
                 result = Math.min(result, specSize);

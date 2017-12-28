@@ -87,7 +87,7 @@ public class PagerRecyclerView extends RecyclerView {
     private PageItemDecoration mPageItemDecoration;
     private PagerOnScrollListener mPagerOnScrollListener;
     private List<OnPageChangeListener> mOnPageChangeListeners = new ArrayList<>();
-    private List<OnDetachListener> mOnDetachListeners = new ArrayList<>();
+    private List<OnDestroyListener> mOnDestroyListeners = new ArrayList<>();
 
     public PagerRecyclerView(Context context) {
         this(context, null);
@@ -222,11 +222,11 @@ public class PagerRecyclerView extends RecyclerView {
         mOnPageChangeListeners.add(listener);
     }
 
-    public void addOnDetachListener(OnDetachListener listener) {
-        if (mOnDetachListeners == null) {
-            mOnDetachListeners = new ArrayList<>();
+    public void addOnDetachListener(OnDestroyListener listener) {
+        if (mOnDestroyListeners == null) {
+            mOnDestroyListeners = new ArrayList<>();
         }
-        mOnDetachListeners.add(listener);
+        mOnDestroyListeners.add(listener);
     }
 
     public void removeAllOnPageChangeListener() {
@@ -600,23 +600,20 @@ public class PagerRecyclerView extends RecyclerView {
         return null;
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        if (mOnDetachListeners != null) {
-            for (OnDetachListener listener :
-                    mOnDetachListeners) {
-                listener.onDetach();
+    public void destroy() {
+        if (mOnDestroyListeners != null) {
+            for (OnDestroyListener listener :
+                    mOnDestroyListeners) {
+                listener.onDestroy();
             }
         }
         if (mOnPageChangeListeners!=null)
             mOnPageChangeListeners.clear();
-        if (mOnDetachListeners!=null)
-            mOnDetachListeners.clear();
+        if (mOnDestroyListeners !=null)
+            mOnDestroyListeners.clear();
 
         mPageItemDecoration = null;
-        super.onDetachedFromWindow();
     }
-
     public interface OnPageChangeListener {
 
         void onPageScrolled(int position, float positionOffset, int positionOffsetPixels);
@@ -628,8 +625,8 @@ public class PagerRecyclerView extends RecyclerView {
 
     }
 
-    public interface OnDetachListener{
-        void onDetach();
+    public interface OnDestroyListener {
+        void onDestroy();
     }
 
     public static class BaseViewHolder{

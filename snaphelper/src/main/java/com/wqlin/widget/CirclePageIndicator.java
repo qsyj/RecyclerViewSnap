@@ -54,7 +54,7 @@ import static android.widget.LinearLayout.VERTICAL;
  * @email wangql@leleyuntech.com
  * @date 2017/10/23 15:47
  */
-public class CirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener ,PagerRecyclerView.OnDetachListener{
+public class CirclePageIndicator extends View implements PagerRecyclerView.OnPageChangeListener ,PagerRecyclerView.OnDestroyListener {
     private static final int INVALID_POINTER = -1;
 
     private float mRadius;
@@ -346,7 +346,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
         }
 
         final float threeRadius = mRadius * 2+mSpace;
-        final float shortOffset = shortPaddingBefore + mRadius;
+        final float shortOffset = shortPaddingBefore + mRadius+mPaintStroke.getStrokeWidth();
         float longOffset = longPaddingBefore + mRadius;
         if (mCentered) {
             longOffset += ((longSize - longPaddingBefore - longPaddingAfter) / 2.0f) - ((count * threeRadius-mSpace) / 2.0f);
@@ -461,13 +461,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
     }
 
     @Override
-    protected void onDetachedFromWindow() {
-        onDetach();
-        super.onDetachedFromWindow();
-    }
-
-    @Override
-    public void onDetach() {
+    public void onDestroy() {
         if (mPagerRecyclerView != null) {
             mPagerRecyclerView.removeAllOnPageChangeListener();
             mPagerRecyclerView = null;
@@ -559,7 +553,7 @@ public class CirclePageIndicator extends View implements PagerRecyclerView.OnPag
             result = specSize;
         } else {
             //Measure the height
-            result = (int) (2 * mRadius + getPaddingTop() + getPaddingBottom() + 1);
+            result = (int) (2 * mRadius + getPaddingTop() + getPaddingBottom() + 2*mPaintStroke.getStrokeWidth());
             //Respect AT_MOST value if that was what is called for by measureSpec
             if (specMode == MeasureSpec.AT_MOST) {
                 result = Math.min(result, specSize);
