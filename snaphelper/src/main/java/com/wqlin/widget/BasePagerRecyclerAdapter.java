@@ -150,7 +150,10 @@ public abstract class BasePagerRecyclerAdapter<K> extends RecyclerView.Adapter {
     public abstract void onBindNoDataChildView(ViewHolder parentViewHolder, PagerRecyclerView.BaseViewHolder childViewHolder, int pagePosition, int childIndex);
 
     public void setNewData(List<K> data) {
-        this.mData = data;
+        if(this.mData==null)
+            mData = new ArrayList<>();
+        this.mData.clear();
+        this.mData.addAll(data);
         notifyDataSetChanged();
     }
 
