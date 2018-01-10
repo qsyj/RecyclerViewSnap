@@ -505,6 +505,7 @@ public class BannerCirclePageIndicator extends View implements PagerRecyclerView
             return;
         if (isLoopStop)
             return;
+        mHandler.removeMessages(WHAT_BANNER_LOOP);
         mHandler.sendEmptyMessageDelayed(WHAT_BANNER_LOOP,bannerLoopDuration);
     }
 
