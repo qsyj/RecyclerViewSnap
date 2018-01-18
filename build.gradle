@@ -1,12 +1,24 @@
 buildscript {
     repositories {
         jcenter()
+        google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.1'
         // 添加上传到jcenter所需的插件
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1'
+    }
+}
+
+subprojects {
+    afterEvaluate {
+        project -> if (project.hasProperty("android")) {
+            android {
+                compileSdkVersion compileSdkVersion
+                buildToolsVersion buildToolsVersion
+            }
+        }
     }
 }
 
@@ -15,6 +27,7 @@ allprojects {
         mavenCentral()
         jcenter()
         maven { url "https://jitpack.io" }
+        google()
     }
 }
 
@@ -24,8 +37,8 @@ task clean(type: Delete) {
 
 ext {
     compileSdkVersion = 26
-    buildToolsVersion = '26.0.1'
+    buildToolsVersion = '26.0.2'
     minSdkVersion = 14
     targetSdkVersion = compileSdkVersion
-    supportLibVersion = '25.1.0'
+    supportLibVersion = '26.0.2'
 }

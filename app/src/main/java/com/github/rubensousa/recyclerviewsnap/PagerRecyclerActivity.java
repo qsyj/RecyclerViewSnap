@@ -7,8 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
-import com.github.magiepooh.recycleritemdecoration.HorizontalItemDecoration;
-import com.github.magiepooh.recycleritemdecoration.ItemDecorations;
 import com.wqlin.widget.BannerCirclePageIndicator;
 import com.wqlin.widget.BasePagerRecyclerAdapter;
 import com.wqlin.widget.CirclePageIndicator;
@@ -72,12 +70,7 @@ public class PagerRecyclerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pager_recycler);
-        mPagerRecyclerView = (PagerRecyclerView) findViewById(R.id.pagerRecyclerView);
-        RecyclerView.ItemDecoration decoration = ItemDecorations.horizontal(this)
-                .first(R.drawable.divider_hor_1dp_f6)
-                .type(0,R.drawable.divider_hor_1dp_f6)
-                .last(R.drawable.divider_hor_1dp_f6)
-                .create();
+        mPagerRecyclerView = findViewById(R.id.pagerRecyclerView);
         PageItemDecoration pageItemDecoration=new PageItemDecoration() {
             Drawable mDrawable = null;
             @Override
